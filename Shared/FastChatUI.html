@@ -284,7 +284,6 @@
             backdrop-filter: blur(8px);
             border: 1px solid var(--border);
             border-bottom-left-radius: 3px;
-            white-space: pre-wrap;
         }
 
         .welcome-msg {
@@ -422,7 +421,262 @@
             color: var(--accent-hover);
             font-weight: 500;
         }
+
+        /* ========== MARKDOWN RENDERING ========== */
+        .ai-msg h1, .ai-msg h2, .ai-msg h3, .ai-msg h4, .ai-msg h5, .ai-msg h6 {
+            margin: 1em 0 0.4em;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--text-main);
+        }
+        .ai-msg h1 { font-size: 1.3em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+        .ai-msg h2 { font-size: 1.15em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+        .ai-msg h3 { font-size: 1.05em; }
+        .ai-msg p { margin: 0.6em 0; }
+        .ai-msg p:first-child { margin-top: 0; }
+        .ai-msg p:last-child { margin-bottom: 0; }
+        .ai-msg ul, .ai-msg ol { padding-left: 1.5em; margin: 0.5em 0; }
+        .ai-msg li { margin: 0.25em 0; }
+        .ai-msg blockquote {
+            border-left: 3px solid var(--accent);
+            margin: 0.75em 0;
+            padding: 0.4em 1em;
+            background: rgba(99,102,241,0.08);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .ai-msg hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+        .ai-msg a { color: var(--accent-hover); text-decoration: underline; }
+        .ai-msg strong { color: var(--text-main); font-weight: 600; }
+        .ai-msg em { color: var(--text-muted); }
+
+        /* Inline code */
+        .ai-msg :not(pre) > code {
+            background: rgba(99,102,241,0.15);
+            color: #c084fc;
+            padding: 0.15em 0.45em;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+            font-size: 0.85em;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+
+        /* Code blocks */
+        .ai-msg pre {
+            position: relative;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0.8em 0;
+        }
+        .ai-msg pre code {
+            display: block;
+            padding: 1em 1.1em;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+            font-size: 0.82em;
+            line-height: 1.65;
+            background: transparent;
+            border: none;
+            color: #e6edf3;
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 14px;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', Consolas, monospace;
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .copy-btn:hover { background: rgba(99,102,241,0.2); color: var(--accent-hover); border-color: rgba(99,102,241,0.4); }
+        .copy-btn.copied { color: var(--green); border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.1); }
+
+        /* Tables */
+        .ai-msg table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.8em 0;
+            font-size: 0.85em;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .ai-msg th {
+            background: rgba(99,102,241,0.15);
+            color: var(--text-main);
+            font-weight: 600;
+            padding: 9px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(99,102,241,0.3);
+        }
+        .ai-msg td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .ai-msg tr:last-child td { border-bottom: none; }
+        .ai-msg tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* ========== HARDWARE DASHBOARD ========== */
+        #hw-dashboard {
+            position: fixed;
+            bottom: 90px;
+            right: 18px;
+            z-index: 50;
+            background: rgba(11, 15, 26, 0.85);
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 16px;
+            min-width: 172px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: opacity var(--transition), transform var(--transition);
+            transform-origin: bottom right;
+        }
+        #hw-dashboard.collapsed { opacity: 0.45; transform: scale(0.92); }
+        #hw-dashboard.collapsed:hover { opacity: 1; transform: scale(1); }
+        .hw-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .hw-title span { color: var(--accent-hover); }
+        .hw-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .hw-row:last-child { margin-bottom: 0; }
+        .hw-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            min-width: 34px;
+            font-weight: 500;
+        }
+        .hw-bar-wrap {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .hw-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+        .hw-bar.cpu { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .hw-bar.ram { background: linear-gradient(90deg, #c084fc, #f472b6); }
+        .hw-pct {
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-width: 32px;
+            text-align: right;
+            color: var(--text-muted);
+        }
+        .hw-pct.warn { color: #fb923c; }
+        .hw-pct.danger { color: var(--red); }
+        .hw-offline { font-size: 0.68rem; color: var(--text-dim); text-align: center; padding: 4px 0; }
+
+        /* ========== IMAGE UPLOAD ========== */
+        #attach-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: var(--radius);
+            padding: 14px 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            line-height: 1;
+        }
+        #attach-btn:hover { background: rgba(99,102,241,0.15); color: var(--accent-hover); border-color: rgba(99,102,241,0.4); }
+
+        .img-preview-wrap {
+            padding: 8px 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            display: none;
+        }
+        .img-preview-wrap.visible { display: flex; }
+        .img-preview-thumb {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .img-remove-btn {
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: var(--red);
+            border-radius: 6px;
+            padding: 4px 9px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .img-remove-btn:hover { background: rgba(239,68,68,0.3); }
+        .img-name { font-size: 0.72rem; color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* drag-over highlight */
+        .main.drag-over::after {
+            content: '🖼  Drop image to attach';
+            position: absolute;
+            inset: 0;
+            background: rgba(99,102,241,0.18);
+            border: 2px dashed var(--accent);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-hover);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* image bubble in chat */
+        .msg-image {
+            max-width: 260px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            display: block;
+            border: 1px solid var(--border);
+        }
     </style>
+
+    <!-- Markdown + Syntax Highlighting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/highlight.min.js"></script>
 </head>
 <body>
 
@@ -441,6 +695,27 @@
             <div class="save-indicator" id="save-indicator">💾 Chats auto-save to USB</div>
         </div>
     </aside>
+
+    <!-- HARDWARE DASHBOARD -->
+    <div id="hw-dashboard" title="Click to collapse">
+        <div class="hw-title" onclick="document.getElementById('hw-dashboard').classList.toggle('collapsed')">
+            🖥 Hardware <span id="hw-toggle-hint">▾</span>
+        </div>
+        <div id="hw-body">
+            <div class="hw-row">
+                <span class="hw-label">CPU</span>
+                <div class="hw-bar-wrap"><div class="hw-bar cpu" id="cpu-bar" style="width:0%"></div></div>
+                <span class="hw-pct" id="cpu-pct">—</span>
+            </div>
+            <div class="hw-row">
+                <span class="hw-label">RAM</span>
+                <div class="hw-bar-wrap"><div class="hw-bar ram" id="ram-bar" style="width:0%"></div></div>
+                <span class="hw-pct" id="ram-pct">—</span>
+            </div>
+            <div class="hw-offline" id="hw-offline" style="display:none">Run server for live stats</div>
+        </div>
+    </div>
+
 
     <!-- MAIN -->
     <div class="main" style="position:relative;">
@@ -474,8 +749,17 @@
             </div>
         </div>
 
+        <!-- Image preview bar (shows when image is attached) -->
+        <div class="img-preview-wrap" id="img-preview-wrap">
+            <img id="img-preview-thumb" class="img-preview-thumb" src="" alt="">
+            <span class="img-name" id="img-preview-name"></span>
+            <button class="img-remove-btn" onclick="clearImage()">✕ Remove</button>
+        </div>
+
         <div class="input-area">
-            <textarea id="user-input" rows="1" placeholder="Ask anything..."></textarea>
+            <button id="attach-btn" title="Attach image (for vision models like LLaVA, Moondream)" onclick="document.getElementById('img-file-input').click()">🖼</button>
+            <input type="file" id="img-file-input" accept="image/*" style="display:none" onchange="handleImageFile(this.files[0])">
+            <textarea id="user-input" rows="1" placeholder="Ask anything... (drag & drop an image for vision models)"></textarea>
             <button id="send-btn" onclick="sendMessage()">Send ➤</button>
             <button id="stop-btn" onclick="stopGeneration()">■ Stop</button>
         </div>
@@ -494,6 +778,8 @@
     let abortController = null;
     let isGenerating = false;
     let saveTimeout = null;
+    let attachedImageB64 = null;   // base64 string of attached image (no data-url prefix)
+    let attachedImageMime = null;  // e.g. 'image/png'
 
     // =============================================
     // PERSISTENCE — auto-save to USB via Python backend
@@ -641,14 +927,101 @@
         document.getElementById('chat-container').innerHTML = `<div class="welcome-msg"><h2>No Chats Yet</h2><p>Click "＋ New Chat" to begin.</p></div>`;
     }
 
-    function appendBubble(text, sender) {
+    function appendBubble(text, sender, imageB64, imageMime) {
         const container = document.getElementById('chat-container');
         const el = document.createElement('div');
         el.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
-        el.textContent = text;
+        if (sender === 'user') {
+            // Show attached image above text if present
+            if (imageB64) {
+                const img = document.createElement('img');
+                img.className = 'msg-image';
+                img.src = `data:${imageMime || 'image/png'};base64,${imageB64}`;
+                img.alt = 'Attached image';
+                el.appendChild(img);
+            }
+            const textNode = document.createTextNode(text);
+            el.appendChild(textNode);
+        } else {
+            el.innerHTML = renderMarkdown(text);
+            el.querySelectorAll('pre code').forEach(addCopyButton);
+        }
         container.appendChild(el);
         container.scrollTop = container.scrollHeight;
         return el;
+    }
+
+    // =============================================
+    // IMAGE HANDLING
+    // =============================================
+    function handleImageFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            // Extract raw base64 (after the comma)
+            attachedImageB64 = dataUrl.split(',')[1];
+            attachedImageMime = file.type;
+            // Show preview
+            document.getElementById('img-preview-thumb').src = dataUrl;
+            document.getElementById('img-preview-name').textContent = file.name;
+            document.getElementById('img-preview-wrap').classList.add('visible');
+            // Reset file input so same file can be re-selected
+            document.getElementById('img-file-input').value = '';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearImage() {
+        attachedImageB64 = null;
+        attachedImageMime = null;
+        document.getElementById('img-preview-wrap').classList.remove('visible');
+        document.getElementById('img-preview-thumb').src = '';
+    }
+
+    // Drag-and-drop onto the main area
+    const mainEl = document.querySelector('.main');
+    mainEl.addEventListener('dragover', (e) => { e.preventDefault(); mainEl.classList.add('drag-over'); });
+    mainEl.addEventListener('dragleave', () => mainEl.classList.remove('drag-over'));
+    mainEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        mainEl.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleImageFile(file);
+    });
+
+    function renderMarkdown(text) {
+        if (typeof marked === 'undefined') return escapeHtml(text).replace(/\n/g, '<br>');
+        return marked.parse(text, { breaks: true });
+    }
+
+    // Finalize an AI bubble: render markdown + syntax highlight + copy buttons
+    function finalizeMessage(el, text) {
+        el.innerHTML = renderMarkdown(text);
+        if (typeof hljs !== 'undefined') {
+            el.querySelectorAll('pre code:not(.hljs)').forEach(b => {
+                hljs.highlightElement(b);
+                addCopyButton(b);
+            });
+        }
+        document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+    }
+
+    function addCopyButton(codeEl) {
+        const pre = codeEl.parentElement;
+        if (pre.querySelector('.code-header')) return; // already added
+        const lang = (codeEl.className.match(/language-(\S+)/) || [])[1] || 'code';
+        const header = document.createElement('div');
+        header.className = 'code-header';
+        header.innerHTML = `<span>${escapeHtml(lang)}</span><button class="copy-btn">Copy</button>`;
+        header.querySelector('.copy-btn').addEventListener('click', function() {
+            navigator.clipboard.writeText(codeEl.innerText).then(() => {
+                this.textContent = 'Copied!';
+                this.classList.add('copied');
+                setTimeout(() => { this.textContent = 'Copy'; this.classList.remove('copied'); }, 2000);
+            });
+        });
+        pre.insertBefore(header, pre.firstChild);
     }
 
     function escapeHtml(str) {
@@ -701,8 +1074,21 @@
 
         chat.model = model;
         chat.systemPrompt = sysPrompt;
-        chat.messages.push({ role: 'user', content: text });
-        appendBubble(text, 'user');
+
+        // Build user message — include image if attached
+        const userMsg = { role: 'user', content: text };
+        if (attachedImageB64) {
+            userMsg.images = [attachedImageB64];  // Ollama vision format
+            userMsg._imageMime = attachedImageMime;
+        }
+        chat.messages.push(userMsg);
+        appendBubble(text, 'user', attachedImageB64, attachedImageMime);
+
+        // Snapshot & clear image before resetting
+        const sentImgB64 = attachedImageB64;
+        const sentImgMime = attachedImageMime;
+        clearImage();
+
         input.value = '';
         autoResize();
 
@@ -713,7 +1099,11 @@
 
         let apiMessages = [];
         if (sysPrompt) apiMessages.push({ role: 'system', content: sysPrompt });
-        chat.messages.forEach(m => apiMessages.push({ role: m.role, content: m.content }));
+        chat.messages.forEach(m => {
+            const apiMsg = { role: m.role, content: m.content };
+            if (m.images) apiMsg.images = m.images;  // pass vision images to Ollama
+            apiMessages.push(apiMsg);
+        });
 
         // Lock model selector now that chat has messages
         document.getElementById('model-select').style.display = 'none';
@@ -768,6 +1158,7 @@
                         const parsed = JSON.parse(line);
                         if (parsed.message && parsed.message.content) {
                             fullResponse += parsed.message.content;
+                            // Stream as plain text — fast, no markdown parsing of partial code blocks
                             aiDiv.textContent = fullResponse;
                             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
                         }
@@ -775,13 +1166,16 @@
                 }
             }
 
+            // ✅ Single markdown render AFTER streaming completes
+            finalizeMessage(aiDiv, fullResponse);
             chat.messages.push({ role: 'assistant', content: fullResponse });
             saveChats();
 
         } catch(err) {
             if (err.name === 'AbortError') {
                 if (fullResponse) {
-                    aiDiv.textContent = fullResponse;
+                    // ✅ Single markdown render on stop too
+                    finalizeMessage(aiDiv, fullResponse);
                     chat.messages.push({ role: 'assistant', content: fullResponse });
                     saveChats();
                 } else {
@@ -822,6 +1216,86 @@
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
     document.getElementById('user-input').addEventListener('input', autoResize);
+
+    // =============================================
+    // HARDWARE DASHBOARD — poll /api/stats
+    // =============================================
+    async function pollHardware() {
+        if (!IS_SERVED) {
+            document.getElementById('hw-offline').textContent = 'Open via server to see live stats';
+            document.getElementById('hw-offline').style.display = 'block';
+            document.getElementById('cpu-bar').closest('.hw-row').style.display = 'none';
+            document.getElementById('ram-bar').closest('.hw-row').style.display = 'none';
+            return;
+        }
+        try {
+            const res = await fetch('/api/stats');
+            if (!res.ok) throw new Error();
+            const d = await res.json();
+            // Hide bars if cpu is 0 and ram is -1 (server running but stats truly unavailable)
+            if (d.ram_percent === -1) {
+                document.getElementById('hw-offline').textContent = 'Stats not supported on this OS';
+                document.getElementById('hw-offline').style.display = 'block';
+                return;
+            }
+            document.getElementById('cpu-bar').closest('.hw-row').style.display = 'flex';
+            document.getElementById('ram-bar').closest('.hw-row').style.display = 'flex';
+            document.getElementById('hw-offline').style.display = 'none';
+            updateHwBar('cpu', d.cpu_percent);
+            updateHwBar('ram', d.ram_percent);
+        } catch(e) {
+            document.getElementById('hw-offline').textContent = 'Server not reachable';
+            document.getElementById('hw-offline').style.display = 'block';
+        }
+    }
+    function updateHwBar(type, pct) {
+        const bar = document.getElementById(`${type}-bar`);
+        const label = document.getElementById(`${type}-pct`);
+        bar.style.width = pct + '%';
+        label.textContent = pct + '%';
+        label.className = 'hw-pct' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+    }
+    pollHardware();
+    setInterval(pollHardware, 3000);
+
+    // Configure marked + hljs — guarded in case libraries haven't loaded yet
+    function setupMarkdown() {
+        if (typeof marked === 'undefined') return;
+        const hljsReady = typeof hljs !== 'undefined';
+
+        if (hljsReady) {
+            marked.setOptions({
+                gfm: true,
+                breaks: true,
+                highlight: (code, lang) => {
+                    if (lang && hljs.getLanguage(lang)) {
+                        try { return hljs.highlight(code, { language: lang }).value; } catch(e) {}
+                    }
+                    return hljs.highlightAuto(code).value;
+                }
+            });
+        } else {
+            marked.setOptions({ gfm: true, breaks: true });
+        }
+
+        // Custom renderer: language label + Copy button in code block header
+        const renderer = new marked.Renderer();
+        renderer.code = (code, lang) => {
+            const safeLang = escapeHtml(lang || '');
+            const displayLang = safeLang || 'code';
+            let highlighted = escapeHtml(code);
+            if (hljsReady) {
+                try {
+                    highlighted = (lang && hljs.getLanguage(lang))
+                        ? hljs.highlight(code, { language: lang }).value
+                        : hljs.highlightAuto(code).value;
+                } catch(e) {}
+            }
+            return `<pre><div class="code-header"><span>${displayLang}</span><button class="copy-btn" onclick="(function(btn){navigator.clipboard.writeText(btn.closest('pre').querySelector('code').innerText).then(()=>{btn.textContent='Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000)});})(this)">Copy</button></div><code class="hljs${safeLang ? ' language-'+safeLang : ''}">${highlighted}</code></pre>`;
+        };
+        marked.setOptions({ renderer });
+    }
+    setupMarkdown();
 
     (async () => {
         await loadChats();

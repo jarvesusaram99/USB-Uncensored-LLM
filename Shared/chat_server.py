@@ -19,7 +19,17 @@ import urllib.error
 import threading
 import webbrowser
 import time
+import platform
+import ctypes
+import ctypes.util
 from urllib.parse import urlparse
+
+# Optional: psutil for hardware stats (graceful fallback to native APIs if not installed)
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
 
 # ── Configuration ──────────────────────────────────────────────
 CHAT_SERVER_PORT = 3333
@@ -31,6 +41,142 @@ CHATS_DIR = os.path.join(SCRIPT_DIR, "chat_data")
 CHATS_FILE = os.path.join(CHATS_DIR, "chats.json")
 SETTINGS_FILE = os.path.join(CHATS_DIR, "settings.json")
 HTML_FILE = os.path.join(SCRIPT_DIR, "FastChatUI.html")
+
+
+# ── Pure-Python Hardware Stats (no psutil needed) ──────────────
+_cpu_times_last = None  # (idle, total) from previous sample
+
+def _get_hw_stats():
+    """Return (cpu_percent, ram_percent) using only stdlib / ctypes."""
+    global _cpu_times_last  # must be at top of function, before any branch uses it
+
+    if HAS_PSUTIL:
+        cpu = round(psutil.cpu_percent(interval=0.25), 1)
+        ram = round(psutil.virtual_memory().percent, 1)
+        return cpu, ram
+
+    plat = platform.system()
+
+    # ── Windows ──────────────────────────────────────────────────
+    if plat == "Windows":
+        # RAM via GlobalMemoryStatusEx
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [
+                ("dwLength",                ctypes.c_ulong),
+                ("dwMemoryLoad",            ctypes.c_ulong),
+                ("ullTotalPhys",            ctypes.c_ulonglong),
+                ("ullAvailPhys",            ctypes.c_ulonglong),
+                ("ullTotalPageFile",        ctypes.c_ulonglong),
+                ("ullAvailPageFile",        ctypes.c_ulonglong),
+                ("ullTotalVirtual",         ctypes.c_ulonglong),
+                ("ullAvailVirtual",         ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+        msx = MEMORYSTATUSEX()
+        msx.dwLength = ctypes.sizeof(msx)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(msx))
+        ram = float(msx.dwMemoryLoad)
+
+        # CPU via GetSystemTimes (idle/kernel/user tick counts)
+        FILETIME = ctypes.c_ulonglong
+        idle, kern, user = FILETIME(), FILETIME(), FILETIME()
+        ctypes.windll.kernel32.GetSystemTimes(
+            ctypes.byref(idle), ctypes.byref(kern), ctypes.byref(user))
+        idle_v = idle.value
+        total_v = kern.value + user.value
+        if _cpu_times_last is None:
+            # First call — sleep briefly and sample again
+            time.sleep(0.25)
+            idle2, kern2, user2 = FILETIME(), FILETIME(), FILETIME()
+            ctypes.windll.kernel32.GetSystemTimes(
+                ctypes.byref(idle2), ctypes.byref(kern2), ctypes.byref(user2))
+            d_idle  = idle2.value - idle_v
+            d_total = (kern2.value + user2.value) - total_v
+            _cpu_times_last = (idle2.value, kern2.value + user2.value)
+        else:
+            prev_idle, prev_total = _cpu_times_last
+            d_idle  = idle_v  - prev_idle
+            d_total = total_v - prev_total
+            _cpu_times_last = (idle_v, total_v)
+
+        cpu = round((1.0 - d_idle / max(d_total, 1)) * 100.0, 1)
+        cpu = max(0.0, min(100.0, cpu))
+        return cpu, ram
+
+    # ── Linux ─────────────────────────────────────────────────────
+    elif plat == "Linux":
+        # RAM
+        ram = 0.0
+        try:
+            with open("/proc/meminfo") as f:
+                mem = {}
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        mem[parts[0].rstrip(":")] = int(parts[1])
+            total = mem.get("MemTotal", 1)
+            avail = mem.get("MemAvailable", total)
+            ram = round((1 - avail / total) * 100, 1)
+        except Exception:
+            pass
+        # CPU via /proc/stat delta
+        cpu = 0.0
+        try:
+            def read_cpu():
+                with open("/proc/stat") as f:
+                    parts = f.readline().split()
+                vals = [int(x) for x in parts[1:]]
+                idle = vals[3]
+                total = sum(vals)
+                return idle, total
+            if _cpu_times_last is None:
+                i1, t1 = read_cpu()
+                time.sleep(0.25)
+                i2, t2 = read_cpu()
+            else:
+                i1, t1 = _cpu_times_last
+                i2, t2 = read_cpu()
+            _cpu_times_last = (i2, t2)
+            d_idle  = i2 - i1
+            d_total = t2 - t1
+            cpu = round((1 - d_idle / max(d_total, 1)) * 100, 1)
+        except Exception:
+            pass
+        return cpu, ram
+
+    # ── macOS ─────────────────────────────────────────────────────
+    else:
+        import subprocess
+        ram = 0.0
+        cpu = 0.0
+        try:
+            out = subprocess.check_output(["vm_stat"], text=True)
+            stats = {}
+            for line in out.splitlines():
+                if ":" in line:
+                    k, _, v = line.partition(":")
+                    stats[k.strip()] = int(v.strip().rstrip("."))
+            page = 4096
+            total_pages = stats.get("Pages free", 0) + stats.get("Pages active", 0) \
+                        + stats.get("Pages inactive", 0) + stats.get("Pages wired down", 0) \
+                        + stats.get("Pages speculative", 0)
+            used_pages  = stats.get("Pages active", 0) + stats.get("Pages wired down", 0)
+            if total_pages > 0:
+                ram = round(used_pages / total_pages * 100, 1)
+        except Exception:
+            pass
+        try:
+            out = subprocess.check_output(
+                ["top", "-l", "2", "-n", "0", "-stats", "cpu"], text=True)
+            for line in out.splitlines():
+                if "CPU usage" in line:
+                    parts = line.replace(",", "").split()
+                    for i, p in enumerate(parts):
+                        if p.endswith("%") and i > 0 and parts[i-1] in ("user", "sys"):
+                            cpu += float(p.rstrip("%"))
+        except Exception:
+            pass
+        return cpu, ram
 
 
 def ensure_data_dir():
@@ -48,10 +194,17 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
     """Handles all HTTP requests for the Portable AI Chat."""
 
     def log_message(self, format, *args):
-        """Suppress default noisy logging; only print important events."""
+        """Print all requests for easy debugging."""
         msg = format % args
-        if "404" in msg or "500" in msg or "error" in msg.lower():
-            print(f"  [server] {msg}")
+        ts = time.strftime("%H:%M:%S")
+        # Colour-code by status: errors red, warnings yellow, ok green
+        if "404" in msg or "500" in msg or "502" in msg:
+            prefix = "  \033[91m[ERR]\033[0m"
+        elif "200" in msg or "204" in msg:
+            prefix = "  \033[92m[ OK]\033[0m"
+        else:
+            prefix = "  \033[93m[---]\033[0m"
+        print(f"{prefix} {ts}  {msg}")
 
     # ── CORS headers ───────────────────────────────────────────
     def _cors_headers(self):
@@ -80,6 +233,10 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         # Settings API
         elif path == "/api/settings":
             self._get_settings()
+
+        # Hardware stats API
+        elif path == "/api/stats":
+            self._get_stats()
 
         # Proxy Ollama API
         elif path.startswith("/ollama/"):
@@ -216,6 +373,23 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
             self._cors_headers()
             self.end_headers()
             self.wfile.write(json.dumps({"ok": True}).encode())
+        except Exception as e:
+            self.send_response(500)
+            self._cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
+
+    # ── Hardware Stats ─────────────────────────────────────────
+    def _get_stats(self):
+        """Return CPU % and RAM % as JSON. Works with no external packages."""
+        try:
+            cpu, ram = _get_hw_stats()
+            data = json.dumps({"cpu_percent": cpu, "ram_percent": ram, "has_psutil": HAS_PSUTIL})
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._cors_headers()
+            self.end_headers()
+            self.wfile.write(data.encode())
         except Exception as e:
             self.send_response(500)
             self._cors_headers()
