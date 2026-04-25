@@ -122,7 +122,7 @@ $UserChoice = Read-Host "  Your choice"
 
 if ([string]::IsNullOrWhiteSpace($UserChoice)) {
     Write-Host ""
-    Write-Host "  No input! Defaulting to [1] NemoMix Unleashed (recommended)..." -ForegroundColor Yellow
+    Write-Host "  No input! Defaulting to [4] NemoMix Unleashed (recommended)..." -ForegroundColor Yellow
     $UserChoice = "1"
 }
 
