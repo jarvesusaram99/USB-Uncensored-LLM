@@ -1,0 +1,15 @@
+{
+  "assets": [
+    { "name": "marked.min.js", "url": "https://cdn.jsdelivr.net/npm/marked@12/marked.min.js" },
+    { "name": "highlight.min.js", "url": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" },
+    { "name": "highlight-github-dark.min.css", "url": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github-dark.min.css" },
+    { "name": "pdf.min.mjs", "url": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.min.mjs" },
+    { "name": "pdf.worker.min.mjs", "url": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.worker.min.mjs" },
+    { "name": "Inter-Regular.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-400-normal.woff2" },
+    { "name": "Inter-Medium.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-500-normal.woff2" },
+    { "name": "Inter-SemiBold.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-600-normal.woff2" },
+    { "name": "Inter-Bold.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-700-normal.woff2" },
+    { "name": "JetBrainsMono-Regular.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-400-normal.woff2" },
+    { "name": "JetBrainsMono-Medium.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2" }
+  ]
+}

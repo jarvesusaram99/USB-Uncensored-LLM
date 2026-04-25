@@ -5,17 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portable AI — Fast Chat</title>
 <meta name="description" content="Portable AI Chat — run local LLMs from a USB drive">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-<!-- Markdown + Syntax Highlighting -->
-<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/highlight.min.js"></script>
-
 <style>
 /* ── Reset ─────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Local fonts (installed by platform installer) ─────── */
+@font-face{
+  font-family:'Inter';
+  src:url('./vendor/Inter-Regular.woff2') format('woff2');
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'Inter';
+  src:url('./vendor/Inter-Medium.woff2') format('woff2');
+  font-weight:500;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'Inter';
+  src:url('./vendor/Inter-SemiBold.woff2') format('woff2');
+  font-weight:600;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'Inter';
+  src:url('./vendor/Inter-Bold.woff2') format('woff2');
+  font-weight:700;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'JetBrains Mono';
+  src:url('./vendor/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'JetBrains Mono';
+  src:url('./vendor/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight:500;
+  font-style:normal;
+  font-display:swap;
+}
 
 /* ── Design tokens ─────────────────────────────────────── */
 :root{
@@ -805,6 +841,51 @@ function esc(s) {
   const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML;
 }
 
+function injectScript(src) {
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+function injectStyle(href) {
+  return new Promise(resolve => {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = href;
+    l.onload = () => resolve(true);
+    l.onerror = () => resolve(false);
+    document.head.appendChild(l);
+  });
+}
+
+async function loadOptionalScript(globalName, localSrc, cdnSrc) {
+  if (window[globalName]) return true;
+  const localOk = await injectScript(localSrc);
+  if (localOk && window[globalName]) return true;
+  if (!navigator.onLine) return false;
+  const cdnOk = await injectScript(cdnSrc);
+  return !!(cdnOk && window[globalName]);
+}
+
+async function loadOptionalCss(localHref, cdnHref) {
+  const localOk = await injectStyle(localHref);
+  if (localOk) return true;
+  if (!navigator.onLine) return false;
+  return injectStyle(cdnHref);
+}
+
+async function loadUiDependencies() {
+  await Promise.all([
+    loadOptionalScript('marked', './vendor/marked.min.js', 'https://cdn.jsdelivr.net/npm/marked@12/marked.min.js'),
+    loadOptionalScript('hljs', './vendor/highlight.min.js', 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js'),
+    loadOptionalCss('./vendor/highlight-github-dark.min.css', 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github-dark.min.css')
+  ]);
+}
+
 // ── Model fetching ───────────────────────────────────────
 async function fetchModels() {
   const sel = document.getElementById('model-select');
@@ -993,8 +1074,15 @@ async function ensurePdfJs() {
   }
   pdfJsLoading = true;
   try {
-    const m = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.min.mjs');
-    window.pdfjsLib = m;
+    const localMod = await import('./vendor/pdf.min.mjs');
+    window.pdfjsLib = localMod;
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs';
+    return true;
+  } catch {}
+  if (!navigator.onLine) { window._pdfFailed = true; return false; }
+  try {
+    const cdnMod = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.min.mjs');
+    window.pdfjsLib = cdnMod;
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.worker.min.mjs';
     return true;
   } catch { window._pdfFailed = true; return false; }
@@ -1007,7 +1095,7 @@ async function handlePdf(file) {
   pgEl.textContent = 'Loading PDF.js…';
   document.getElementById('pdf-preview').classList.add('show');
   const ok = await ensurePdfJs();
-  if (!ok) { pgEl.textContent = '⚠ PDF.js failed — check internet'; return; }
+  if (!ok) { pgEl.textContent = '⚠ PDF text extraction unavailable (offline or missing vendor assets)'; return; }
   pgEl.textContent = 'Extracting text…';
   try {
     const buf = await file.arrayBuffer();
@@ -1190,6 +1278,7 @@ function stopGen() { if (abortCtrl) abortCtrl.abort(); }
 
 // ── Init ─────────────────────────────────────────────────
 (async () => {
+  await loadUiDependencies();
   setupMarked();
   await loadGlobalPrompt();    // restore global system prompt from USB (settings.json)
   await loadChats();

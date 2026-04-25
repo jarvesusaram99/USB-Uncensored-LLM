@@ -5,6 +5,7 @@ Shared/models/installed-models.txt
 Shared/models/Modelfile*
 Shared/.ollama-runtime
 Shared/models
+Shared/vendor
 
 # Ignore private chat history and local settings
 Shared/chat_data/
