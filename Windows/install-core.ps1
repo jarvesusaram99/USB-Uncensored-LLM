@@ -288,7 +288,7 @@ Write-Host "      Done." -ForegroundColor Green
 # STEP 3: Download optional UI vendor assets for offline mode
 # =================================================================
 Write-Host ""
-Write-Host "[4/7] Downloading UI assets (offline markdown/pdf/fonts)..." -ForegroundColor Yellow
+Write-Host "[3/7] Downloading UI assets (offline markdown/pdf/fonts)..." -ForegroundColor Yellow
 
 $vendorDir = "$USB_Drive\Shared\vendor"
 $vendorScript = "$USB_Drive\Shared\scripts\download-ui-assets.ps1"
@@ -302,7 +302,7 @@ if (Test-Path $vendorScript) {
 # STEP 4: Download selected AI models
 # =================================================================
 Write-Host ""
-Write-Host "[5/7] Downloading AI Model(s)..." -ForegroundColor Yellow
+Write-Host "[4/7] Downloading AI Model(s)..." -ForegroundColor Yellow
 
 $downloadErrors = @()
 $modelIndex = 0
@@ -366,7 +366,7 @@ foreach ($m in $SelectedModels) {
 # STEP 5: Create Modelfile configuration for each model
 # =================================================================
 Write-Host ""
-Write-Host "[6/7] Creating AI model configurations..." -ForegroundColor Yellow
+Write-Host "[5/7] Creating AI model configurations..." -ForegroundColor Yellow
 
 foreach ($m in $SelectedModels) {
     $modelfilePath = "$USB_Drive\Shared\models\Modelfile-$($m.Local)"
@@ -436,7 +436,7 @@ if (Test-Path "$USB_Drive\Shared\bin\ollama-windows.exe") {
 # STEP 7: IMPORT ALL SELECTED MODELS INTO OLLAMA ENGINE
 # =================================================================
 Write-Host ""
-Write-Host "[7/7] Importing AI models into the Ollama engine..." -ForegroundColor Yellow
+Write-Host "[6/7] Importing AI models into the Ollama engine..." -ForegroundColor Yellow
 
 if (-Not (Test-Path "$USB_Drive\Shared\bin\ollama-windows.exe")) {
     Write-Host "      ERROR: Ollama not found! Cannot import models." -ForegroundColor Red
