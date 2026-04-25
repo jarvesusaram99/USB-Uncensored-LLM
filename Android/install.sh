@@ -66,44 +66,12 @@ echo -e "${DGR}      Device RAM: ${TOTAL_RAM_GB} GB${RST}"
 # ================================================================
 echo ""
 echo -e "${YLW}[2/5] Downloading UI assets (offline markdown/pdf/fonts)...${RST}"
-VENDOR_NAMES=(
-  "marked.min.js"
-  "highlight.min.js"
-  "highlight-github-dark.min.css"
-  "pdf.min.mjs"
-  "pdf.worker.min.mjs"
-  "Inter-Regular.woff2"
-  "Inter-Medium.woff2"
-  "Inter-SemiBold.woff2"
-  "Inter-Bold.woff2"
-  "JetBrainsMono-Regular.woff2"
-  "JetBrainsMono-Medium.woff2"
-)
-VENDOR_URLS=(
-  "https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"
-  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
-  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github-dark.min.css"
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.min.mjs"
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.worker.min.mjs"
-  "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-400-normal.woff2"
-  "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-500-normal.woff2"
-  "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-600-normal.woff2"
-  "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-700-normal.woff2"
-  "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-400-normal.woff2"
-  "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2"
-)
-for i in "${!VENDOR_NAMES[@]}"; do
-    NAME="${VENDOR_NAMES[$i]}"
-    URL="${VENDOR_URLS[$i]}"
-    DEST="$VENDOR_DIR/$NAME"
-    echo -e "${DGR}      -> ${NAME}${RST}"
-    wget -q "$URL" -O "$DEST"
-    if [ $? -ne 0 ] || [ ! -f "$DEST" ] || [ "$(stat -c%s "$DEST" 2>/dev/null || stat -f%z "$DEST" 2>/dev/null || echo 0)" -lt 1024 ]; then
-        rm -f "$DEST"
-        echo -e "${YLW}         WARNING: Could not fetch ${NAME}. UI will fallback when online.${RST}"
-    fi
-done
-echo -e "${GRN}      UI asset bootstrap complete.${RST}"
+VENDOR_SCRIPT="$SHARED_DIR/scripts/download-ui-assets.sh"
+if [ -f "$VENDOR_SCRIPT" ]; then
+    bash "$VENDOR_SCRIPT" "$VENDOR_DIR"
+else
+    echo -e "${YLW}      WARNING: Shared vendor bootstrap script not found. Skipping.${RST}"
+fi
 
 # ================================================================
 # 3. Compile Llama.cpp natively
@@ -137,44 +105,57 @@ fi
 
 cp build/bin/llama-server "$SHARED_BIN/llama-server-android" 2>/dev/null || true
 
+# ----------------------------------------------------------------
+# Android model catalog (shared JSON config)
+# ----------------------------------------------------------------
+CONFIG_QUERY="$SHARED_DIR/scripts/config_query.py"
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+else
+    echo -e "${RED}ERROR: Python is required to parse shared model config.${RST}"
+    exit 1
+fi
+
+if [ ! -f "$CONFIG_QUERY" ]; then
+    echo -e "${RED}ERROR: Missing shared config query script: $CONFIG_QUERY${RST}"
+    exit 1
+fi
+
+eval "$("$PYTHON_CMD" "$CONFIG_QUERY" models-shell android)"
+
+get_field() {
+    local num=$1 field=$2
+    eval echo "\${MODEL_${field}_${num}}"
+}
+
 # ================================================================
 # 4. Model Retrieval
 # ================================================================
 echo ""
 echo -e "${YLW}[4/5] AI Model Library...${RST}"
 
-echo -e "  ${YLW}[1]${RST} Gemma 2 2B Abliterated   (1.6 GB) ${RED}[UNCENSORED - FASTEST]${RST}"
-echo -e "  ${YLW}[2]${RST} SmolLM2 1.7B Uncensored  (1.0 GB) ${RED}[UNCENSORED - LIGHT]${RST}"
-echo -e "  ${YLW}[3]${RST} Qwen2.5 1.5B Instruct    (1.1 GB) ${CYN}[STANDARD - MULTILINGUAL]${RST}"
-echo -e "  ${YLW}[4]${RST} Phi 3.5 Mini 3.8B        (2.2 GB) ${CYN}[STANDARD - SMART]${RST}"
-echo -e "  ${YLW}[5]${RST} Qwen 3.5 9B Uncensored   (5.2 GB) ${MAG}[HEAVY - FOR 12GB+ RAM]${RST}"
+for NUM in "${MODEL_NUMS[@]}"; do
+    NAME=$(get_field "$NUM" NAME)
+    SIZE=$(get_field "$NUM" SIZE)
+    LABEL=$(get_field "$NUM" LABEL)
+    BADGE=$(get_field "$NUM" BADGE)
+    if [ "$LABEL" = "UNCENSORED" ]; then
+        LABEL_COLOR="$RED"
+    else
+        LABEL_COLOR="$CYN"
+    fi
+    echo -e "  ${YLW}[${NUM}]${RST} ${NAME} (${SIZE} GB) ${LABEL_COLOR}[${LABEL} - ${BADGE}]${RST}"
+done
 echo -e "  ${GRN}[C]${RST} CUSTOM - Paste HuggingFace .gguf direct link"
 echo -e "  ${DGR}[0]${RST} Skip downloading (I already have models in Shared/models/)"
 echo ""
-read -r -p "  Select model (0-5 or C): " MODEL_CHOICE
+read -r -p "  Select model (0-${#MODEL_NUMS[@]} or C): " MODEL_CHOICE
 
 MODEL_URL=""
-case $(echo "$MODEL_CHOICE" | tr '[:upper:]' '[:lower:]') in
-    1)
-        MODEL_URL="https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf"
-        MODEL_FILE="gemma-2-2b-it-abliterated-Q4_K_M.gguf"
-        ;;
-    2)
-        MODEL_URL="https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-Uncensored-GGUF/resolve/main/SmolLM2-1.7B-Instruct-Uncensored-Q4_K_M.gguf"
-        MODEL_FILE="SmolLM2-1.7B-Instruct-Uncensored-Q4_K_M.gguf"
-        ;;
-    3)
-        MODEL_URL="https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
-        MODEL_FILE="Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
-        ;;
-    4)
-        MODEL_URL="https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf"
-        MODEL_FILE="Phi-3.5-mini-instruct-Q4_K_M.gguf"
-        ;;
-    5)
-        MODEL_URL="https://huggingface.co/HauhauCS/Qwen3.5-9B-Uncensored-HauhauCS-Aggressive/resolve/main/Qwen3.5-9B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf"
-        MODEL_FILE="Qwen3.5-9B-Uncensored-Q4.gguf"
-        ;;
+MODEL_CHOICE_L=$(echo "$MODEL_CHOICE" | tr '[:upper:]' '[:lower:]')
+case "$MODEL_CHOICE_L" in
     c|custom)
         read -r -p "  Paste direct .gguf URL: " CUSTOM_URL
         if [ -n "$CUSTOM_URL" ]; then
@@ -187,9 +168,28 @@ case $(echo "$MODEL_CHOICE" | tr '[:upper:]' '[:lower:]') in
         echo -e "${GRN}      Skipping download phase.${RST}"
         ;;
     *)
-        echo -e "${YLW}      Invalid choice. Defaulting to Gemma 2 2B.${RST}"
-        MODEL_URL="https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf"
-        MODEL_FILE="gemma-2-2b-it-abliterated-Q4_K_M.gguf"
+        if [[ "$MODEL_CHOICE_L" =~ ^[0-9]+$ ]]; then
+            FOUND=false
+            for NUM in "${MODEL_NUMS[@]}"; do
+                if [ "$MODEL_CHOICE_L" -eq "$NUM" ]; then
+                    MODEL_URL=$(get_field "$NUM" URL)
+                    MODEL_FILE=$(get_field "$NUM" FILE)
+                    FOUND=true
+                    break
+                fi
+            done
+            if ! $FOUND; then
+                echo -e "${YLW}      Invalid choice. Defaulting to first model.${RST}"
+                DEF="${MODEL_NUMS[0]}"
+                MODEL_URL=$(get_field "$DEF" URL)
+                MODEL_FILE=$(get_field "$DEF" FILE)
+            fi
+        else
+            echo -e "${YLW}      Invalid choice. Defaulting to first model.${RST}"
+            DEF="${MODEL_NUMS[0]}"
+            MODEL_URL=$(get_field "$DEF" URL)
+            MODEL_FILE=$(get_field "$DEF" FILE)
+        fi
         ;;
 esac
 
