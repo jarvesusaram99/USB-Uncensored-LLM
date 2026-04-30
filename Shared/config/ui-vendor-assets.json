@@ -10,6 +10,9 @@
     { "name": "Inter-SemiBold.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-600-normal.woff2" },
     { "name": "Inter-Bold.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-700-normal.woff2" },
     { "name": "JetBrainsMono-Regular.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-400-normal.woff2" },
-    { "name": "JetBrainsMono-Medium.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2" }
+    { "name": "JetBrainsMono-Medium.woff2", "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2" },
+    { "name": "fa-all.min.css", "url": "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" },
+    { "name": "fa-solid-900.woff2", "url": "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/webfonts/fa-solid-900.woff2" },
+    { "name": "fa-regular-400.woff2", "url": "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/webfonts/fa-regular-400.woff2" }
   ]
 }

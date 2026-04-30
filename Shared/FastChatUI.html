@@ -1,1295 +1,1675 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portable AI — Fast Chat</title>
-<meta name="description" content="Portable AI Chat — run local LLMs from a USB drive">
-<style>
-/* ── Reset ─────────────────────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portable AI ÔÇö Fast Chat</title>
+    <!-- Vendor assets (downloaded offline by platform installer) -->
+    <link rel="stylesheet" href="./vendor/fa-all.min.css">
+    <link rel="stylesheet" href="./vendor/highlight-github-dark.min.css">
+    <script src="./vendor/marked.min.js"></script>
+    <script src="./vendor/highlight.min.js"></script>
+    <style>
+        /* ── Local fonts (installed by platform installer) ─────── */
+        @font-face { font-family:'Inter'; src:url('./vendor/Inter-Regular.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:swap; }
+        @font-face { font-family:'Inter'; src:url('./vendor/Inter-Medium.woff2') format('woff2'); font-weight:500; font-style:normal; font-display:swap; }
+        @font-face { font-family:'Inter'; src:url('./vendor/Inter-SemiBold.woff2') format('woff2'); font-weight:600; font-style:normal; font-display:swap; }
+        @font-face { font-family:'Inter'; src:url('./vendor/Inter-Bold.woff2') format('woff2'); font-weight:700; font-style:normal; font-display:swap; }
+        @font-face { font-family:'JetBrains Mono'; src:url('./vendor/JetBrainsMono-Regular.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:swap; }
+        @font-face { font-family:'JetBrains Mono'; src:url('./vendor/JetBrainsMono-Medium.woff2') format('woff2'); font-weight:500; font-style:normal; font-display:swap; }
+        /* Override Font Awesome font paths to use local vendor files */
+        @font-face { font-family:'Font Awesome 6 Free'; font-style:normal; font-weight:900; font-display:block; src:url('./vendor/fa-solid-900.woff2') format('woff2'); }
+        @font-face { font-family:'Font Awesome 6 Free'; font-style:normal; font-weight:400; font-display:block; src:url('./vendor/fa-regular-400.woff2') format('woff2'); }
+        /* Tailwind responsive utilities (minimal subset used by this file) */
+        .hidden { display: none !important; }
+        @media (min-width: 640px) { .sm\:inline { display: inline !important; } }
+        @media (min-width: 768px) { .md\:flex { display: flex !important; } .md\:hidden { display: none !important; } }
+    </style>
 
-/* ── Local fonts (installed by platform installer) ─────── */
-@font-face{
-  font-family:'Inter';
-  src:url('./vendor/Inter-Regular.woff2') format('woff2');
-  font-weight:400;
-  font-style:normal;
-  font-display:swap;
-}
-@font-face{
-  font-family:'Inter';
-  src:url('./vendor/Inter-Medium.woff2') format('woff2');
-  font-weight:500;
-  font-style:normal;
-  font-display:swap;
-}
-@font-face{
-  font-family:'Inter';
-  src:url('./vendor/Inter-SemiBold.woff2') format('woff2');
-  font-weight:600;
-  font-style:normal;
-  font-display:swap;
-}
-@font-face{
-  font-family:'Inter';
-  src:url('./vendor/Inter-Bold.woff2') format('woff2');
-  font-weight:700;
-  font-style:normal;
-  font-display:swap;
-}
-@font-face{
-  font-family:'JetBrains Mono';
-  src:url('./vendor/JetBrainsMono-Regular.woff2') format('woff2');
-  font-weight:400;
-  font-style:normal;
-  font-display:swap;
-}
-@font-face{
-  font-family:'JetBrains Mono';
-  src:url('./vendor/JetBrainsMono-Medium.woff2') format('woff2');
-  font-weight:500;
-  font-style:normal;
-  font-display:swap;
-}
+    <style>
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           DESIGN TOKENS ÔÇö Gemini/ChatGPT hybrid palette
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        :root {
+            --font: 'Inter', sans-serif;
+            --sb-w: 260px;
+            --spd: 0.2s;
+            --radius: 12px;
+            --radius-lg: 18px;
+            --radius-pill: 999px;
+        }
 
-/* ── Design tokens ─────────────────────────────────────── */
-:root{
-  --bg:        #0d1117;
-  --bg-sidebar:#0d1117;
-  --bg-panel:  #161b22;
-  --bg-input:  #1c2128;
-  --bg-msg-ai: #161b22;
-  --bg-hover:  #1c2128;
-  --border:    #30363d;
-  --border-faint:#21262d;
-  --accent:    #6366f1;
-  --accent-dim:#4f46e5;
-  --accent-hi: #818cf8;
-  --green:     #3fb950;
-  --red:       #f85149;
-  --orange:    #e3b341;
-  --text:      #e6edf3;
-  --text-m:    #8b949e;
-  --text-d:    #484f58;
-  --radius:    8px;
-  --radius-lg: 12px;
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
-  --trans:     0.15s ease;
-}
+        [data-theme="dark"] {
+            /* Backgrounds ÔÇö ChatGPT layering */
+            --bg:      #212121;
+            --bg2:     #171717;
+            --bg3:     #2a2a2a;
+            --bg-u:    #2f2f2f;
+            --bg-inp:  #2f2f2f;
 
-/* ── Base ──────────────────────────────────────────────── */
-html,body{height:100%;overflow:hidden}
-body{
-  font-family:'Inter',-apple-system,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  display:flex;
-  flex-direction:column;
-  font-size:14px;
-  line-height:1.6;
-}
+            /* Hovers */
+            --bgh: rgba(255,255,255,0.07);
+            --bga: rgba(255,255,255,0.10);
 
-/* ── Top Header Bar ────────────────────────────────────── */
-#top-bar{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:0 16px;
-  height:44px;
-  min-height:44px;
-  background:var(--bg-panel);
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-  z-index:10;
-}
-#top-bar .brand{
-  font-weight:700;
-  font-size:14px;
-  color:var(--text);
-  display:flex;align-items:center;gap:6px;
-  white-space:nowrap;
-  min-width:120px;
-}
-#top-bar .brand span{color:var(--accent);}
-.top-divider{width:1px;height:20px;background:var(--border);flex-shrink:0;}
-.top-label{font-size:11px;color:var(--text-d);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
-#model-select{
-  background:var(--bg-input);
-  border:1px solid var(--border);
-  color:var(--accent-hi);
-  font-size:12px;
-  font-weight:600;
-  padding:3px 8px;
-  border-radius:6px;
-  cursor:pointer;
-  max-width:180px;
-}
-#model-select:focus{outline:none;border-color:var(--accent);}
-#model-locked{display:none;font-size:12px;font-weight:600;color:var(--accent-hi);}
-#temp-input{
-  background:var(--bg-input);
-  border:1px solid var(--border);
-  color:var(--text);
-  font-size:12px;
-  padding:3px 6px;
-  border-radius:6px;
-  width:52px;
-  text-align:center;
-}
-#temp-input:focus{outline:none;border-color:var(--accent);}
+            /* Text */
+            --t1: #ececec;
+            --t2: #a0a0a0;
+            --t3: #6b6b6b;
 
-/* Hardware stats in header */
-#hw-bar{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-shrink:0;
-}
-.hw-stat{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:11px;
-  color:var(--text-m);
-}
-.hw-stat-label{color:var(--text-d);font-weight:500;}
-.hw-mini-track{
-  width:44px;height:4px;
-  background:rgba(255,255,255,0.07);
-  border-radius:2px;overflow:hidden;
-}
-.hw-mini-bar{
-  height:100%;border-radius:2px;
-  transform:scaleX(0);
-  transform-origin:left;
-  transition:transform 0.6s ease;
-  will-change:transform;
-}
-.hw-mini-bar.cpu{background:var(--accent);}
-.hw-mini-bar.ram{background:#c084fc;}
-.hw-pct{font-weight:600;font-size:11px;color:var(--text-m);min-width:30px;}
-.hw-pct.warn{color:var(--orange);}
-.hw-pct.danger{color:var(--red);}
-#hw-offline{font-size:11px;color:var(--text-d);}
+            /* Borders */
+            --bd:  #3a3a3a;
+            --bd2: #555555;
 
-#sys-prompt-btn{
-  background:none;border:1px solid var(--border);
-  color:var(--text-m);font-size:11px;padding:3px 9px;
-  border-radius:6px;cursor:pointer;white-space:nowrap;
-  transition:var(--trans);position:relative;
-}
-#sys-prompt-btn:hover{border-color:var(--accent);color:var(--accent-hi);}
-#sys-prompt-btn.has-global{border-color:var(--accent);color:var(--accent-hi);}
-#sys-global-dot{
-  position:absolute;top:-3px;right:-3px;
-  width:7px;height:7px;border-radius:50%;
-  background:var(--accent);display:none;
-  box-shadow:0 0 4px var(--accent);
-}
+            /* Code & misc */
+            --code: #1a1a1a;
+            --scr:  #555;
+            --shd:  rgba(0,0,0,0.5);
+            --ov:   rgba(0,0,0,0.6);
+            --tst:  #3a3a3a;
 
-/* ── App layout ────────────────────────────────────────── */
-#app{
-  display:flex;
-  flex:1;
-  overflow:hidden;
-}
+            /* Brand gradient ÔÇö Gemini palette */
+            --grad1: #4285f4;
+            --grad2: #9b72cb;
+            --grad3: #d96570;
 
-/* ── Sidebar ───────────────────────────────────────────── */
-#sidebar{
-  width:260px;min-width:260px;
-  background:var(--bg-sidebar);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  overflow:hidden;
-}
-.sidebar-head{
-  padding:12px;
-  border-bottom:1px solid var(--border-faint);
-}
-#new-chat-btn{
-  width:100%;
-  background:var(--accent);
-  color:#fff;
-  border:none;
-  border-radius:var(--radius);
-  padding:8px 12px;
-  font-size:13px;
-  font-weight:600;
-  cursor:pointer;
-  transition:background var(--trans);
-}
-#new-chat-btn:hover{background:var(--accent-dim);}
-#chat-list{
-  flex:1;overflow-y:auto;padding:6px;
-}
-#chat-list::-webkit-scrollbar{width:4px;}
-#chat-list::-webkit-scrollbar-track{background:transparent;}
-#chat-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.chat-item{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border-radius:var(--radius);
-  cursor:pointer;transition:background var(--trans);
-  font-size:13px;color:var(--text-m);
-  white-space:nowrap;overflow:hidden;
-}
-.chat-item:hover{background:var(--bg-hover);}
-.chat-item.active{background:var(--bg-input);color:var(--text);}
-.chat-icon{font-size:12px;flex-shrink:0;}
-.chat-title{flex:1;overflow:hidden;text-overflow:ellipsis;}
-.chat-del{
-  background:none;border:none;color:var(--text-d);
-  font-size:13px;cursor:pointer;padding:0 2px;
-  opacity:0;transition:opacity var(--trans),color var(--trans);
-  flex-shrink:0;
-}
-.chat-item:hover .chat-del{opacity:1;}
-.chat-del:hover{color:var(--red);}
-.sidebar-footer{
-  padding:10px 12px;
-  border-top:1px solid var(--border-faint);
-}
-.status-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-d);}
-#status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0;}
-#status-dot.online{background:var(--green);}
+            /* Status */
+            --green:  #6dd58c;
+            --red:    #f28b82;
+            --orange: #fdb039;
+        }
 
-/* ── Main area ─────────────────────────────────────────── */
-#main{
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-  position:relative;
-}
+        [data-theme="light"] {
+            --bg:      #ffffff;
+            --bg2:     #f4f4f4;
+            --bg3:     #ebebeb;
+            --bg-u:    #f0f0f0;
+            --bg-inp:  #f4f4f4;
 
-/* System prompt panel */
-#sys-panel{
-  border-bottom:1px solid var(--border);
-  background:var(--bg-panel);
-  padding:10px 16px;
-  display:none;
-  flex-direction:column;
-  gap:7px;
-}
-#sys-panel.open{display:flex;}
-#sys-panel .sys-row{
-  display:flex;align-items:flex-start;gap:10px;
-}
-#sys-panel label{font-size:12px;color:var(--text-d);padding-top:6px;white-space:nowrap;}
-#sys-ta{
-  flex:1;background:var(--bg-input);
-  border:1px solid var(--border);
-  color:var(--text);font-size:13px;
-  border-radius:var(--radius);padding:6px 10px;
-  resize:none;height:54px;font-family:inherit;
-  line-height:1.5;
-}
-#sys-ta:focus{outline:none;border-color:var(--accent);}
-#sys-actions{
-  display:flex;align-items:center;gap:8px;
-  padding-left:72px;
-}
-#sys-actions button{
-  font-size:11px;padding:4px 12px;
-  border-radius:5px;cursor:pointer;
-  white-space:nowrap;transition:var(--trans);
-  font-family:inherit;
-}
-#set-global-btn{
-  border:1px solid var(--accent);background:none;
-  color:var(--accent-hi);
-}
-#set-global-btn:hover{background:rgba(99,102,241,0.12);}
-#clear-global-btn{
-  border:1px solid var(--border);background:none;
-  color:var(--text-d);
-}
-#clear-global-btn:hover{border-color:var(--red);color:var(--red);}
-#global-status{
-  font-size:11px;color:var(--text-d);margin-left:4px;
-}
+            --bgh: rgba(0,0,0,0.05);
+            --bga: rgba(0,0,0,0.08);
 
-/* Loading overlay */
-#load-overlay{
-  display:none;position:absolute;inset:0;
-  background:var(--bg);
-  z-index:20;
-  align-items:center;justify-content:center;
-  flex-direction:column;gap:12px;
-}
-#load-overlay.active{display:flex;}
-.spinner{
-  width:32px;height:32px;
-  border:3px solid var(--border);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-#load-text{font-size:13px;color:var(--text-m);text-align:center;}
+            --t1: #1a1a1a;
+            --t2: #5f5f5f;
+            --t3: #9a9a9a;
 
-/* Chat container */
-#chat-box{
-  flex:1;overflow-y:auto;
-  padding:24px 0;
-  contain:layout style paint;
-}
-#chat-box::-webkit-scrollbar{width:5px;}
-#chat-box::-webkit-scrollbar-track{background:transparent;}
-#chat-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+            --bd:  #e0e0e0;
+            --bd2: #c0c0c0;
 
-.welcome{
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;height:100%;gap:8px;
-  color:var(--text-d);text-align:center;
-  padding:40px;
-}
-.welcome h2{font-size:22px;font-weight:600;color:var(--text-m);}
-.welcome p{font-size:13px;line-height:1.7;}
+            --code: #f5f5f5;
+            --scr:  #c0c0c0;
+            --shd:  rgba(0,0,0,0.08);
+            --ov:   rgba(0,0,0,0.3);
+            --tst:  #2a2a2a;
 
-/* Messages */
-.msg-wrap{
-  display:flex;padding:4px 20px 4px 20px;
-  max-width:100%;
-}
-.msg-wrap.user{justify-content:flex-end;}
-.msg-wrap.ai{justify-content:flex-start;}
+            --grad1: #4285f4;
+            --grad2: #9b72cb;
+            --grad3: #d96570;
 
-.bubble{
-  max-width:72%;padding:10px 14px;
-  border-radius:var(--radius-lg);
-  font-size:14px;line-height:1.7;
-  word-break:break-word;
-}
-.bubble.user{
-  background:var(--accent);color:#fff;
-  border-bottom-right-radius:4px;
-}
-.bubble.ai{
-  background:var(--bg-msg-ai);
-  border:1px solid var(--border-faint);
-  border-bottom-left-radius:4px;
-  color:var(--text);
-}
+            --green:  #1e8e3e;
+            --red:    #d93025;
+            --orange: #f29900;
+        }
 
-/* Typing dots */
-.typing-dots{display:flex;gap:4px;padding:2px 0;}
-.typing-dots span{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--text-d);
-  animation:dot .9s infinite ease-in-out;
-}
-.typing-dots span:nth-child(2){animation-delay:.15s;}
-.typing-dots span:nth-child(3){animation-delay:.3s;}
-@keyframes dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           RESET + BASE
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body {
+            height: 100%; overflow: hidden;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--t1);
+            font-size: 15px;
+            line-height: 1.6;
+            transition: background var(--spd), color var(--spd);
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scr); border-radius: 4px; }
 
-/* Image in bubble */
-.msg-img{max-width:240px;border-radius:var(--radius);display:block;margin-bottom:6px;border:1px solid var(--border);}
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           LAYOUT SHELL
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #app { display:flex; height:100vh; width:100vw; overflow:hidden; }
 
-/* ── Markdown styles in AI bubbles ────────────────────── */
-.bubble.ai h1,.bubble.ai h2,.bubble.ai h3{
-  font-weight:700;margin:14px 0 6px;line-height:1.3;
-}
-.bubble.ai h1{font-size:1.2em;}
-.bubble.ai h2{font-size:1.1em;}
-.bubble.ai h3{font-size:1em;}
-.bubble.ai p{margin:6px 0;}
-.bubble.ai ul,.bubble.ai ol{padding-left:20px;margin:6px 0;}
-.bubble.ai li{margin:3px 0;}
-.bubble.ai blockquote{
-  border-left:3px solid var(--accent);
-  padding:4px 12px;margin:8px 0;
-  color:var(--text-m);background:rgba(99,102,241,0.06);
-  border-radius:0 4px 4px 0;
-}
-.bubble.ai code:not(pre code){
-  background:rgba(255,255,255,0.08);
-  border:1px solid var(--border);
-  border-radius:4px;padding:1px 5px;
-  font-family:var(--font-mono);font-size:.85em;
-}
-.bubble.ai pre{
-  background:#0d1117;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  overflow:auto;margin:10px 0;
-  contain:layout style;
-}
-.code-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:6px 12px;
-  background:#161b22;
-  border-bottom:1px solid var(--border);
-  border-radius:var(--radius) var(--radius) 0 0;
-}
-.code-header span{font-size:11px;color:var(--text-d);font-family:var(--font-mono);}
-.copy-btn{
-  background:none;border:1px solid var(--border);
-  color:var(--text-m);font-size:11px;padding:2px 8px;
-  border-radius:4px;cursor:pointer;transition:var(--trans);font-family:inherit;
-}
-.copy-btn:hover{border-color:var(--accent);color:var(--accent-hi);}
-.copy-btn.copied{border-color:var(--green);color:var(--green);}
-.bubble.ai pre code{
-  display:block;padding:12px;
-  font-family:var(--font-mono);font-size:13px;
-  line-height:1.6;background:none!important;
-}
-.bubble.ai table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;}
-.bubble.ai th,.bubble.ai td{padding:6px 12px;border:1px solid var(--border);text-align:left;}
-.bubble.ai th{background:var(--bg-input);font-weight:600;}
-.bubble.ai a{color:var(--accent-hi);}
-.bubble.ai hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           SIDEBAR ÔÇö ChatGPT flavour
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #sidebar {
+            width: var(--sb-w);
+            min-width: var(--sb-w);
+            background: var(--bg2);
+            border-right: 1px solid var(--bd);
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--spd) ease, min-width var(--spd) ease, width var(--spd) ease;
+            z-index: 50;
+            overflow: hidden;
+        }
+        #sidebar.off {
+            transform: translateX(-100%);
+            min-width: 0;
+            width: 0;
+            pointer-events: none;
+        }
 
-/* ── Input zone ────────────────────────────────────────── */
-#input-zone{
-  border-top:1px solid var(--border);
-  background:var(--bg-panel);
-  padding:10px 16px 12px;
-  flex-shrink:0;
-}
+        /* Sidebar header */
+        .sb-hd {
+            padding: 16px 12px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sb-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 0 6px 8px;
+        }
+        .sb-brand-icon {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, var(--grad1), var(--grad2), var(--grad3));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .sb-brand-icon svg { width: 14px; height: 14px; }
+        .sb-brand-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--t1);
+            letter-spacing: -0.3px;
+        }
 
-/* Attachment previews */
-#img-preview{
-  display:none;align-items:center;gap:10px;
-  margin-bottom:8px;
-  padding:8px 10px;
-  background:var(--bg-input);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-}
-#img-preview.show{display:flex;}
-#img-thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
-#img-name{font-size:12px;color:var(--text-m);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* New chat button */
+        .nc-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--bd);
+            background: transparent;
+            color: var(--t2);
+            font-family: var(--font);
+            font-size: 13.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background var(--spd), border-color var(--spd), color var(--spd);
+        }
+        .nc-btn:hover {
+            background: var(--bgh);
+            border-color: var(--bd2);
+            color: var(--t1);
+        }
+        .nc-btn i { font-size: 13px; }
 
-#pdf-preview{
-  display:none;align-items:center;gap:10px;
-  margin-bottom:8px;
-  padding:8px 12px;
-  background:rgba(99,102,241,0.07);
-  border:1px solid rgba(99,102,241,0.2);
-  border-radius:var(--radius);
-}
-#pdf-preview.show{display:flex;}
-#pdf-icon{font-size:20px;}
-#pdf-info strong{display:block;font-size:12px;color:var(--text);}
-#pdf-pages{font-size:11px;color:var(--text-m);}
-.remove-btn{
-  background:none;border:none;color:var(--text-d);
-  font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;
-  transition:color var(--trans);
-}
-.remove-btn:hover{color:var(--red);}
+        /* Conversation list */
+        .sb-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 10px 14px 4px;
+        }
+        .sb-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 8px;
+        }
+        .cv {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.13s;
+            margin-bottom: 1px;
+            position: relative;
+        }
+        .cv:hover { background: var(--bgh); }
+        .cv.act  { background: var(--bga); }
+        .cv .ci  { font-size: 13px; color: var(--t3); flex-shrink: 0; }
+        .cv .ct  { flex: 1; font-size: 13px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cv.act .ct { color: var(--t1); }
+        .cv .cd  { opacity: 0; background: none; border: none; color: var(--t3); cursor: pointer; padding: 4px 5px; border-radius: 6px; transition: opacity 0.15s, color 0.15s; font-size: 12px; flex-shrink: 0; }
+        .cv:hover .cd { opacity: 1; }
+        .cv .cd:hover  { color: var(--red); }
 
-/* Vision warning */
-#vision-warn{
-  display:none;
-  align-items:center;gap:8px;
-  margin-bottom:8px;
-  padding:7px 12px;
-  background:rgba(227,179,65,0.08);
-  border:1px solid rgba(227,179,65,0.25);
-  border-radius:var(--radius);
-  font-size:12px;color:var(--orange);
-}
-#vision-warn.show{display:flex;}
+        /* Sidebar footer */
+        .sb-ft {
+            padding: 10px 12px;
+            border-top: 1px solid var(--bd);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sf-btn {
+            background: none;
+            border: none;
+            color: var(--t3);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.15s, color 0.15s;
+            font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sf-btn:hover { background: var(--bgh); color: var(--t1); }
+        .sf-sp { flex: 1; }
 
-/* Input row */
-.input-row{display:flex;gap:8px;align-items:flex-end;}
-#attach-btn{
-  background:var(--bg-input);
-  border:1px solid var(--border);
-  color:var(--text-m);
-  border-radius:var(--radius);
-  padding:0 12px;height:42px;
-  font-size:16px;cursor:pointer;
-  transition:var(--trans);flex-shrink:0;
-}
-#attach-btn:hover{border-color:var(--accent);color:var(--accent-hi);}
-#attach-file{display:none;}
-#msg-input{
-  flex:1;min-height:42px;max-height:140px;
-  background:var(--bg-input);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  color:var(--text);font-size:14px;
-  font-family:inherit;line-height:1.5;
-  padding:10px 14px;resize:none;
-  transition:border-color var(--trans);
-  overflow-y:auto;
-}
-#msg-input:focus{outline:none;border-color:var(--accent);}
-#msg-input::placeholder{color:var(--text-d);}
-#send-btn,#stop-btn{
-  height:42px;padding:0 16px;
-  border:none;border-radius:var(--radius);
-  font-size:13px;font-weight:600;cursor:pointer;
-  flex-shrink:0;transition:var(--trans);
-}
-#send-btn{background:var(--accent);color:#fff;}
-#send-btn:hover{background:var(--accent-dim);}
-#stop-btn{display:none;background:var(--red);color:#fff;}
-#stop-btn:hover{opacity:.85;}
+        /* Overlay */
+        #overlay { display:none; position:fixed; inset:0; background:var(--ov); z-index:45; }
+        #overlay.on { display:block; }
 
-/* Drag-over overlay */
-#main.drag-over::after{
-  content:'Drop image or PDF';
-  position:absolute;inset:0;
-  background:rgba(99,102,241,0.12);
-  border:2px dashed var(--accent);
-  border-radius:4px;z-index:30;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:600;color:var(--accent-hi);
-  pointer-events:none;
-}
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           MAIN PANEL
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+            background: var(--bg);
+        }
 
-/* ── Scrollbar global ──────────────────────────────────── */
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-</style>
+        /* ÔöÇÔöÇ Topbar ÔöÇÔöÇ */
+        #topbar {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 10px;
+            flex-shrink: 0;
+            z-index: 10;
+            min-height: 56px;
+        }
+        .tb-btn {
+            background: none;
+            border: none;
+            color: var(--t3);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.15s, color 0.15s;
+            font-size: 17px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tb-btn:hover { background: var(--bgh); color: var(--t1); }
+        .tb-title {
+            font-size: 14.5px;
+            font-weight: 500;
+            color: var(--t2);
+            user-select: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+        .tb-sp { flex: 1; }
+
+        /* System Prompt button in topbar */
+        #sys-prompt-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--bd);
+            border-radius: var(--radius-pill);
+            padding: 6px 14px;
+            font-size: 12.5px;
+            color: var(--t2);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            font-family: var(--font);
+            font-weight: 500;
+        }
+        #sys-prompt-btn:hover { background: var(--bgh); border-color: var(--bd2); color: var(--t1); }
+        #sys-prompt-btn.has-global { color: var(--grad1); border-color: rgba(66,133,244,.35); }
+
+        /* HW Stats bar */
+        .hw-bar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--bg3);
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--bd);
+        }
+        .hw-stat { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--t3); font-weight:500; }
+        .hw-mini-track { width:28px; height:3px; background:var(--bd); border-radius:2px; overflow:hidden; }
+        .hw-mini-bar { height:100%; border-radius:2px; transform:scaleX(0); transform-origin:left; transition:transform 0.6s ease; }
+        .hw-mini-bar.cpu { background: var(--grad1); }
+        .hw-mini-bar.ram { background: var(--grad2); }
+        .hw-pct { min-width: 28px; font-size: 11px; font-weight: 600; }
+        .hw-pct.warn   { color: var(--orange); }
+        .hw-pct.danger { color: var(--red); }
+
+        /* ÔöÇÔöÇ System Prompt Panel ÔöÇÔöÇ */
+        #sys-panel {
+            display: none;
+            background: var(--bg2);
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--bd);
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeSlideDown 0.2s ease;
+        }
+        #sys-panel.open { display: flex; }
+        @keyframes fadeSlideDown {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .sys-row { display:flex; flex-direction:column; gap:7px; }
+        .sys-row label { font-size:12.5px; font-weight:600; color:var(--t2); letter-spacing:0.01em; }
+        #sys-ta {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--bd);
+            color: var(--t1);
+            font-size: 13.5px;
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            resize: none;
+            height: 64px;
+            font-family: var(--font);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #sys-ta:focus { border-color: var(--bd2); box-shadow: 0 0 0 3px rgba(66,133,244,.12); }
+        .sys-actions { display:flex; align-items:center; gap:8px; }
+        .sys-btn {
+            padding: 6px 16px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+            border: none;
+            font-family: var(--font);
+        }
+        .sys-btn.primary  { background: rgba(66,133,244,.15); color: #4285f4; }
+        .sys-btn.primary:hover  { background: rgba(66,133,244,.25); }
+        .sys-btn.secondary { background: transparent; border: 1px solid var(--bd); color: var(--t2); }
+        .sys-btn.secondary:hover { background: var(--bgh); color: var(--t1); }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           CHAT AREA
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           WELCOME SCREEN ÔÇö Gemini style
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #welcome {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px 20px;
+            gap: 0;
+            animation: welcomeFade 0.55s ease;
+        }
+        @keyframes welcomeFade {
+            from { opacity:0; transform:translateY(20px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        /* Gemini-style animated logo mark */
+        .wl-wrap {
+            width: 60px; height: 60px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .wl-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: linear-gradient(var(--bg), var(--bg)) padding-box,
+                        linear-gradient(135deg, var(--grad1), var(--grad2), var(--grad3)) border-box;
+            animation: ringPulse 3s ease-in-out infinite;
+        }
+        .wl-inner {
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--grad1), var(--grad2), var(--grad3));
+            display: flex; align-items: center; justify-content: center;
+            animation: innerPulse 3s ease-in-out infinite;
+        }
+        .wl-inner svg { width: 20px; height: 20px; }
+        @keyframes ringPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.12); opacity: 1; }
+        }
+        @keyframes innerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Gradient "Hello" title */
+        .wt {
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--grad1) 0%, var(--grad2) 40%, var(--grad3) 70%, var(--t1) 90%);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shimmer 5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .ws {
+            font-size: 16px;
+            color: var(--t2);
+            margin-bottom: 36px;
+            font-weight: 400;
+        }
+
+        /* Suggestion chips ÔÇö Gemini style */
+        .sg {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .sc {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            cursor: pointer;
+            transition: background 0.17s, border-color 0.17s, transform 0.12s, box-shadow 0.17s;
+        }
+        .sc:hover {
+            background: var(--bgh);
+            border-color: var(--bd2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--shd);
+        }
+        .sc .si {
+            width: 32px; height: 32px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .sc .st { font-size: 13px; color: var(--t2); line-height: 1.45; }
+        .ib { background: rgba(66,133,244,.12); color: #4285f4; }
+        .ip { background: rgba(155,114,203,.12); color: #9b72cb; }
+        .it { background: rgba(52,168,124,.12); color: #34a87c; }
+        .io { background: rgba(234,134,59,.12); color: #ea863b; }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           MESSAGES
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #msgs {
+            max-width: 780px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px 24px 16px;
+            display: none;
+            flex-direction: column;
+        }
+        #msgs.on { display: flex; }
+
+        /* Message row */
+        .mr {
+            display: flex;
+            gap: 14px;
+            padding: 16px 0 6px;
+            animation: msgIn 0.25s ease;
+        }
+        @keyframes msgIn {
+            from { opacity:0; transform:translateY(8px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .mr.usr { justify-content: flex-end; }
+
+        /* Avatar */
+        .ma {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 2px;
+        }
+        .ma.ai {
+            background: linear-gradient(135deg, var(--grad1), var(--grad2), var(--grad3));
+        }
+        .ma.ai svg { width: 16px; height: 16px; }
+        .ma.u {
+            background: var(--bg3);
+            border: 1px solid var(--bd);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t2);
+        }
+
+        .mc { flex: 1; min-width: 0; max-width: 700px; }
+        .usr .mc { flex: unset; max-width: 82%; }
+
+        /* User bubble ÔÇö ChatGPT style */
+        .ub {
+            background: var(--bg-u);
+            border-radius: 22px;
+            border-bottom-right-radius: 5px;
+            padding: 12px 18px;
+            border: 1px solid var(--bd);
+            display: inline-block;
+        }
+
+        /* Text content */
+        .mt { font-size: 15px; line-height: 1.72; word-wrap: break-word; color: var(--t1); }
+
+        /* Markdown styles */
+        .mt p { margin-bottom: 12px; }
+        .mt p:last-child { margin-bottom: 0; }
+        .mt h1, .mt h2, .mt h3 { font-weight: 600; margin: 20px 0 10px; color: var(--t1); }
+        .mt h1 { font-size: 1.35em; } .mt h2 { font-size: 1.18em; } .mt h3 { font-size: 1.06em; }
+        .mt strong { font-weight: 600; }
+        .mt a { color: var(--grad1); text-decoration: none; }
+        .mt a:hover { text-decoration: underline; }
+        .mt ul, .mt ol { margin: 12px 0; padding-left: 24px; }
+        .mt li { margin-bottom: 5px; }
+        .mt hr { border: none; border-top: 1px solid var(--bd); margin: 20px 0; }
+        .mt table {
+            width: 100%; border-collapse: collapse; margin: 16px 0;
+            font-size: 14px; border-radius: 10px; overflow: hidden; border: 1px solid var(--bd);
+        }
+        .mt th, .mt td { padding: 8px 14px; border: 1px solid var(--bd); text-align: left; }
+        .mt th { background: var(--bg2); font-weight: 600; }
+
+        /* Inline code */
+        .mt code:not(.hljs) {
+            background: var(--bg3);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.88em;
+            border: 1px solid var(--bd);
+        }
+
+        /* Code blocks */
+        .cblk { margin: 16px 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--bd); background: var(--code); }
+        .cbh { display:flex; align-items:center; justify-content:space-between; padding: 9px 14px; background: var(--bg2); border-bottom: 1px solid var(--bd); font-size: 12px; color: var(--t3); }
+        .cbc-btn { background:none; border:none; color:var(--t3); cursor:pointer; font-size:12px; padding:3px 8px; border-radius:6px; transition:background .15s,color .15s; display:flex; align-items:center; gap:5px; font-family:var(--font); }
+        .cbc-btn:hover { background:var(--bgh); color:var(--t1); }
+        .cblk pre { padding:16px; overflow-x:auto; margin:0; background:transparent!important; }
+        .cblk pre code { font-family:'JetBrains Mono','SF Mono',monospace; font-size:13px; line-height:1.65; background:transparent!important; padding:0; }
+
+        /* Attachment previews in messages */
+        .msg-img { max-width: 280px; border-radius: 12px; display:block; margin-bottom:12px; border:1px solid var(--bd); }
+        .msg-pdf-pill { display:inline-flex; align-items:center; gap:6px; background:var(--bg3); padding:6px 12px; border-radius:16px; font-size:12px; color:var(--t2); margin-bottom:12px; border:1px solid var(--bd); }
+
+        /* Message actions (copy/like/dislike) */
+        .mact { display:flex; gap:1px; margin-top:8px; opacity:0; transition:opacity 0.18s; }
+        .mr:hover .mact { opacity:1; }
+        .mab { background:none; border:none; color:var(--t3); cursor:pointer; padding:6px 8px; border-radius:8px; font-size:13px; transition:background .15s,color .15s; display:flex; align-items:center; gap:4px; }
+        .mab:hover { background:var(--bgh); color:var(--t1); }
+        .mab.lk  { color: var(--grad1); }
+        .mab.dlk { color: var(--red); }
+
+        /* Typing dots */
+        .typ { display:flex; align-items:center; gap:5px; padding:8px 0; }
+        .typ span { width:7px; height:7px; background:var(--t3); border-radius:50%; animation:typBounce 1.4s infinite ease-in-out; }
+        .typ span:nth-child(2) { animation-delay:.16s; }
+        .typ span:nth-child(3) { animation-delay:.32s; }
+        @keyframes typBounce {
+            0%, 60%, 100% { transform:translateY(0); opacity:.4; }
+            30% { transform:translateY(-6px); opacity:1; }
+        }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           INPUT AREA ÔÇö Gemini/ChatGPT style
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #inp-area {
+            padding: 8px 20px 18px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Vision warning */
+        #vision-warn {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            max-width: 740px;
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 10px 16px;
+            background: rgba(253,176,57,0.08);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--orange);
+            border: 1px solid rgba(253,176,57,0.2);
+        }
+        #vision-warn.on { display:flex; }
+
+        /* File/image preview bar */
+        .fbar { max-width: 740px; width:100%; display:none; gap:10px; padding:0 4px 10px; flex-wrap:wrap; }
+        .fbar.on { display:flex; }
+        .img-preview { position:relative; width:60px; height:60px; border-radius:10px; overflow:hidden; border:1px solid var(--bd); }
+        .img-preview img { width:100%; height:100%; object-fit:cover; }
+        .pdf-preview { display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--bg3); border-radius:12px; border:1px solid var(--bd); }
+        .pdf-preview .p-info { display:flex; flex-direction:column; max-width:130px; }
+        .pdf-preview strong { font-size:12px; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pdf-preview span { font-size:10px; color:var(--t3); }
+        .f-rm { position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.65); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .pdf-preview .f-rm { position:relative; top:0; right:0; background:transparent; color:var(--t3); }
+        .pdf-preview .f-rm:hover { color:var(--red); }
+
+        /* The main input wrapper ÔÇö pill/rounded-rectangle */
+        .iw {
+            max-width: 740px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-inp);
+            border: 1px solid var(--bd);
+            border-radius: 22px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            overflow: visible;
+            position: relative;
+        }
+        .iw:focus-within,
+        .iw.ht {
+            border-color: var(--bd2);
+            box-shadow: 0 2px 20px var(--shd);
+        }
+
+        /* ÔöÇÔöÇ Model Selector Row (INSIDE input, at top) ÔöÇÔöÇ */
+        .model-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px 0;
+            gap: 6px;
+        }
+
+        .model-dd { position: relative; }
+
+        .model-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px 5px 8px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--bd);
+            background: var(--bg3);
+            color: var(--t2);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .model-btn:hover { background: var(--bgh); border-color: var(--bd2); color: var(--t1); }
+        .model-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+        .model-btn .chev { font-size: 9px; color: var(--t3); margin-left: 2px; transition: transform 0.2s; }
+        .model-btn.open .chev { transform: rotate(180deg); }
+
+        /* Model dropdown menu */
+        .model-menu {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background: var(--bg3);
+            border: 1px solid var(--bd);
+            border-radius: 16px;
+            padding: 6px;
+            min-width: 250px;
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 200;
+            box-shadow: 0 12px 36px var(--shd);
+            display: none;
+            animation: menuPop 0.15s ease;
+        }
+        .model-menu.on { display: block; }
+        @keyframes menuPop {
+            from { opacity:0; transform:translateY(6px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .mm-opt { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; transition:background .13s; }
+        .mm-opt:hover { background:var(--bgh); }
+        .mm-opt.sel { background:var(--bga); }
+        .mmo-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; background:linear-gradient(135deg,var(--grad1),var(--grad2),var(--grad3)); color:#fff; }
+        .mmo-info { flex:1; min-width:0; }
+        .mmo-name { font-size:13px; font-weight:500; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .mmo-desc { font-size:11px; color:var(--t3); margin-top:1px; }
+        .mmo-chk { color:var(--grad1); font-size:12px; opacity:0; }
+        .mm-opt.sel .mmo-chk { opacity:1; }
+
+        /* ÔöÇÔöÇ Text row (textarea + action buttons) ÔöÇÔöÇ */
+        .text-row {
+            display: flex;
+            align-items: flex-end;
+            padding: 6px 8px 8px 16px;
+        }
+        #msg-inp {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font);
+            font-size: 15px;
+            color: var(--t1);
+            resize: none;
+            max-height: 200px;
+            line-height: 1.55;
+            padding: 6px 4px;
+        }
+        #msg-inp::placeholder { color: var(--t3); }
+
+        /* Action buttons row */
+        .ia { display:flex; align-items:center; gap:3px; flex-shrink:0; }
+
+        /* Icon button base */
+        .ib2 {
+            background: none;
+            border: none;
+            color: var(--t3);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            font-size: 15px;
+            transition: background 0.15s, color 0.15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .ib2:hover { background: var(--bgh); color: var(--t1); }
+
+        /* Send button */
+        .sbtn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--bd);
+            color: var(--bg);
+            transition: background 0.2s, transform 0.12s;
+            font-size: 14px;
+        }
+        .sbtn.on { background: var(--t1); cursor: pointer; }
+        .sbtn.on:hover { transform: scale(1.06); }
+        .sbtn.on:active { transform: scale(0.94); }
+
+        /* Stop streaming button */
+        .stbtn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--t1);
+            color: var(--bg);
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+            border: none;
+        }
+        .stbtn:hover { opacity: 0.85; }
+
+        /* Disclaimer */
+        .disc { font-size: 11.5px; color: var(--t3); text-align: center; margin-top: 8px; max-width: 740px; }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           TOASTS
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        #toasts {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            pointer-events: none;
+        }
+        .toast {
+            background: var(--tst);
+            color: var(--t1);
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.35);
+            animation: toastIn .22s ease, toastOut .22s ease 2.2s forwards;
+            white-space: nowrap;
+            border: 1px solid var(--bd);
+        }
+        @keyframes toastIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes toastOut { from{opacity:1} to{opacity:0;transform:translateY(-6px)} }
+
+        /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+           RESPONSIVE
+        ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+        @media (max-width: 768px) {
+            #sidebar { position:fixed; left:0; top:0; height:100%; }
+            #sidebar.off { transform:translateX(-100%); }
+            .sg { grid-template-columns:1fr; }
+            .usr .mc { max-width:88%; }
+            .wt { font-size:30px; }
+            #inp-area { padding:6px 12px 14px; }
+            #msgs { padding:16px 16px 12px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration:.01ms!important; transition-duration:.01ms!important; }
+        }
+
+        /* Drag-and-drop overlay */
+        #main.drag-over::after {
+            content: 'Drop image, PDF or text file';
+            position: absolute; inset: 0;
+            background: rgba(66,133,244,0.10);
+            border: 2px dashed var(--grad1);
+            border-radius: var(--radius-lg);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: var(--grad1); font-weight: 500;
+            pointer-events: none; z-index: 20;
+        }
+        #main { position: relative; }
+    </style>
 </head>
 <body>
-
-<!-- ── Top bar ─────────────────────────────────────────── -->
-<div id="top-bar">
-  <div class="brand">⚡ <span>Portable AI</span></div>
-  <div class="top-divider"></div>
-  <span class="top-label">Model</span>
-  <select id="model-select"><option>Loading…</option></select>
-  <span id="model-locked"></span>
-  <div class="top-divider"></div>
-  <span class="top-label">Temp</span>
-  <input type="number" id="temp-input" value="0.7" min="0" max="2" step="0.1">
-  <div class="top-divider"></div>
-  <button id="sys-prompt-btn" onclick="toggleSysPanel()">⚙ System Prompt<span id="sys-global-dot"></span></button>
-
-  <!-- Hardware stats -->
-  <div id="hw-bar">
-    <div class="hw-stat">
-      <span class="hw-stat-label">CPU</span>
-      <div class="hw-mini-track"><div class="hw-mini-bar cpu" id="cpu-bar"></div></div>
-      <span class="hw-pct" id="cpu-pct">--%</span>
-    </div>
-    <div class="hw-stat">
-      <span class="hw-stat-label">RAM</span>
-      <div class="hw-mini-track"><div class="hw-mini-bar ram" id="ram-bar"></div></div>
-      <span class="hw-pct" id="ram-pct">--%</span>
-    </div>
-    <span id="hw-offline" style="display:none"></span>
-  </div>
-</div>
-
-<!-- ── App body ─────────────────────────────────────────── -->
 <div id="app">
 
-  <!-- Sidebar -->
-  <aside id="sidebar">
-    <div class="sidebar-head">
-      <button id="new-chat-btn" onclick="newChat()">＋ New Chat</button>
-    </div>
-    <div id="chat-list"></div>
-    <div class="sidebar-footer">
-      <div class="status-row">
-        <div id="status-dot"></div>
-        <span id="status-text">Connecting…</span>
-      </div>
-      <div class="status-row" style="margin-top:4px;">
-        <span style="font-size:11px;color:var(--text-d);">💾 Chats auto-save to USB</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div id="main">
-
-    <!-- System prompt panel -->
-    <div id="sys-panel">
-      <div class="sys-row">
-        <label>System Prompt</label>
-        <textarea id="sys-ta" placeholder="Type a system prompt… applies to this chat"></textarea>
-      </div>
-      <div id="sys-actions">
-        <button id="set-global-btn" onclick="saveGlobalPrompt()" title="Apply to ALL future new chats">Set Global</button>
-        <button id="clear-global-btn" onclick="clearGlobalPrompt()" title="Remove global default">Clear Global</button>
-        <span id="global-status"></span>
-      </div>
-    </div>
-
-    <!-- Loading overlay -->
-    <div id="load-overlay">
-      <div class="spinner"></div>
-      <div id="load-text">Loading model…</div>
-    </div>
-
-    <!-- Chat messages -->
-    <div id="chat-box">
-      <div class="welcome" id="welcome">
-        <h2>Ready to Chat</h2>
-        <p>Select a model and start typing.<br>Conversations auto-save to the USB drive.</p>
-      </div>
-    </div>
-
-    <!-- Input zone -->
-    <div id="input-zone">
-
-      <!-- Image preview -->
-      <div id="img-preview">
-        <img id="img-thumb" src="" alt="">
-        <span id="img-name"></span>
-        <button class="remove-btn" onclick="clearImage()" title="Remove">✕</button>
-      </div>
-
-      <!-- PDF preview -->
-      <div id="pdf-preview">
-        <span id="pdf-icon">📄</span>
-        <div id="pdf-info">
-          <strong id="pdf-name">document.pdf</strong>
-          <span id="pdf-pages">Reading…</span>
+    <!-- ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ SIDEBAR ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ -->
+    <aside id="sidebar" role="navigation" aria-label="Chat history">
+        <div class="sb-hd">
+            <div class="sb-brand">
+                <div class="sb-brand-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L14.09 8.26L21 9.27L16 14.14L17.18 21.02L12 17.77L6.82 21.02L8 14.14L3 9.27L9.91 8.26L12 2Z" fill="white"/></svg>
+                </div>
+                <span class="sb-brand-name">Portable AI</span>
+            </div>
+            <button class="nc-btn" id="nc-btn" aria-label="New chat">
+                <i class="fa-solid fa-plus"></i>
+                <span>New chat</span>
+            </button>
         </div>
-        <button class="remove-btn" onclick="clearPdf()" title="Remove">✕</button>
-      </div>
 
-      <!-- Vision warning -->
-      <div id="vision-warn">
-        <span>⚠</span>
-        <span><strong id="warn-model"></strong> is a text-only model — it cannot see images.
-        Pull a vision model: <code>ollama pull llava</code></span>
-      </div>
+        <div class="sb-list" id="cv-list"></div>
 
-      <div class="input-row">
-        <button id="attach-btn" title="Attach image or PDF" onclick="document.getElementById('attach-file').click()">📎</button>
-        <input type="file" id="attach-file" accept="image/*,.pdf,application/pdf" onchange="handleAttach(this.files[0])">
-        <textarea id="msg-input" rows="1" placeholder="Ask anything… drag & drop an image or PDF"></textarea>
-        <button id="send-btn" onclick="sendMessage()">Send ➤</button>
-        <button id="stop-btn" onclick="stopGen()">■ Stop</button>
-      </div>
-    </div>
-  </div>
+        <div class="sb-ft">
+            <button class="sf-btn" id="th-sb" aria-label="Toggle theme" title="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <div class="sf-sp"></div>
+            <button class="sf-btn" id="ca-btn" aria-label="Clear all chats" title="Clear all chats">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+    </aside>
+
+    <div id="overlay"></div>
+
+    <!-- ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ MAIN ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ -->
+    <main id="main">
+
+        <!-- Top Bar -->
+        <header id="topbar">
+            <button class="tb-btn" id="sb-tog" aria-label="Toggle sidebar">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <div class="tb-title" id="tb-title"></div>
+            <div class="tb-sp"></div>
+
+            <button id="sys-prompt-btn" title="System Instructions">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="hidden sm:inline">Instructions</span>
+            </button>
+
+            <!-- HW Stats ÔÇö hidden on mobile -->
+            <div class="hw-bar hidden md:flex" id="hw-bar">
+                <div class="hw-stat">
+                    <span style="color:var(--t3);font-size:10px;">CPU</span>
+                    <div class="hw-mini-track"><div class="hw-mini-bar cpu" id="cpu-bar"></div></div>
+                    <span class="hw-pct" id="cpu-pct">--%</span>
+                </div>
+                <div class="hw-stat">
+                    <span style="color:var(--t3);font-size:10px;">RAM</span>
+                    <div class="hw-mini-track"><div class="hw-mini-bar ram" id="ram-bar"></div></div>
+                    <span class="hw-pct" id="ram-pct">--%</span>
+                </div>
+            </div>
+
+            <button class="tb-btn md:hidden" id="th-top" aria-label="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </header>
+
+        <!-- System Prompt Panel (slides down from topbar) -->
+        <div id="sys-panel">
+            <div class="sys-row">
+                <label>System Instructions</label>
+                <textarea id="sys-ta" placeholder="Add context or instructions for this conversationÔÇª"></textarea>
+            </div>
+            <div class="sys-actions">
+                <button class="sys-btn primary" id="set-global-btn">Set as Default</button>
+                <button class="sys-btn secondary" id="clear-global-btn">Clear</button>
+            </div>
+        </div>
+
+        <!-- Chat / Messages -->
+        <div id="chat">
+
+            <!-- Welcome screen -->
+            <div id="welcome">
+                <div class="wl-wrap">
+                    <div class="wl-ring"></div>
+                    <div class="wl-inner">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L14.09 8.26L21 9.27L16 14.14L17.18 21.02L12 17.77L6.82 21.02L8 14.14L3 9.27L9.91 8.26L12 2Z" fill="white"/></svg>
+                    </div>
+                </div>
+
+                <div class="wt">Hello</div>
+                <div class="ws">What can I help you with today?</div>
+
+                <div class="sg">
+                    <div class="sc" data-prompt="Help me write a professional email to reschedule a meeting">
+                        <div class="si ib"><i class="fa-solid fa-pen-fancy"></i></div>
+                        <div class="st">Help me write a professional email to reschedule a meeting</div>
+                    </div>
+                    <div class="sc" data-prompt="Explain quantum computing in simple terms">
+                        <div class="si ip"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div class="st">Explain quantum computing in simple terms</div>
+                    </div>
+                    <div class="sc" data-prompt="Write a Python function to find prime numbers">
+                        <div class="si it"><i class="fa-solid fa-code"></i></div>
+                        <div class="st">Write a Python function to find prime numbers</div>
+                    </div>
+                    <div class="sc" data-prompt="Plan a 7-day trip to Tokyo, Japan">
+                        <div class="si io"><i class="fa-solid fa-plane"></i></div>
+                        <div class="st">Plan a 7-day trip to Tokyo, Japan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="msgs"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div id="inp-area">
+
+            <!-- Vision warning -->
+            <div id="vision-warn">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span><strong id="warn-model"></strong> is text-only. It cannot process images. Try a vision model like <code>llava</code>.</span>
+            </div>
+
+            <!-- Main input wrapper -->
+            <div class="iw" id="iw">
+
+                <!-- File/image preview bar (inside the box) -->
+                <div class="fbar" id="fbar"></div>
+
+                <!-- Model selector row ÔÇö INSIDE the input box at top -->
+                <div class="model-row">
+                    <div class="model-dd" id="model-dd">
+                        <button class="model-btn" id="model-btn" aria-label="Select model">
+                            <svg viewBox="0 0 24 24">
+                                <defs>
+                                    <linearGradient id="mvg" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%"   stop-color="var(--grad1)"/>
+                                        <stop offset="50%"  stop-color="var(--grad2)"/>
+                                        <stop offset="100%" stop-color="var(--grad3)"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M12 2L14.09 8.26L21 9.27L16 14.14L17.18 21.02L12 17.77L6.82 21.02L8 14.14L3 9.27L9.91 8.26L12 2Z" fill="url(#mvg)"/>
+                            </svg>
+                            <span id="model-name">LoadingÔÇª</span>
+                            <i class="fa-solid fa-chevron-down chev"></i>
+                        </button>
+
+                        <!-- Model dropdown (opens upward) -->
+                        <div class="model-menu" id="model-menu">
+                            <div style="padding:16px;font-size:12px;color:var(--t3);text-align:center;">Connecting to EngineÔÇª</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Textarea + send row -->
+                <div class="text-row">
+                    <textarea id="msg-inp" placeholder="Ask anythingÔÇª" rows="1" aria-label="Message input"></textarea>
+                    <div class="ia">
+                        <button class="ib2" id="att-btn" aria-label="Attach file" title="Upload image or PDF">
+                            <i class="fa-solid fa-paperclip"></i>
+                        </button>
+                        <input type="file" id="f-inp" hidden accept="image/*,.pdf,application/pdf,.txt,.md">
+                        <button class="ib2 sbtn" id="send-btn" aria-label="Send message" disabled>
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="disc">Responses are generated locally. May contain inaccuracies.</p>
+        </div>
+
+    </main>
 </div>
 
+<div id="toasts"></div>
+
 <script>
-'use strict';
-// ── Config ──────────────────────────────────────────────
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   Portable AI ÔÇö Fast Chat ┬À Core Logic (unchanged)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+
+// ÔöÇÔöÇ Config ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 const IS_SERVED = location.protocol === 'http:' || location.protocol === 'https:';
 const OLLAMA   = IS_SERVED ? '/ollama' : 'http://127.0.0.1:11434';
+const VISION_MODELS = ['llava','moondream','bakllava','vision','minicpm-v','cogvlm','qwen-vl','phi-3-vision'];
 
-// ── State ────────────────────────────────────────────────
-let allChats      = [];
-let activeChatId  = null;
-let isGenerating  = false;
-let abortCtrl     = null;
-let saveTimer     = null;
-let resizeRaf     = null;
-let attachImgB64  = null;
-let attachImgMime = null;
-let attachPdfText = null;
-let attachPdfName = null;
-let globalSystemPrompt = '';
+// ÔöÇÔöÇ State ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+const S = {
+    convs: [],
+    curId: null,
+    theme: localStorage.getItem('g-theme') || 'dark',
+    sbOpen: window.innerWidth > 768,
+    streaming: false,
+    abort: null,
+    models: [],
+    model: localStorage.getItem('g-model') || '',
+    globalSys: '',
 
-// ── Persistence ──────────────────────────────────────────
-async function loadChats() {
-  if (!IS_SERVED) return;
-  try {
-    const r = await fetch('/api/chats');
-    if (r.ok) allChats = await r.json();
-  } catch {}
-}
-function saveChats() {
-  if (!IS_SERVED) return;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() =>
-    fetch('/api/chats', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(allChats) }).catch(() => {})
-  , 800);
+    // Attachments
+    imgB64: null,
+    imgMime: null,
+    pdfText: null,
+    pdfName: null,
+    pdfPages: 0
+};
+
+// ÔöÇÔöÇ DOM ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+const D = {
+    sb: $('#sidebar'), ov: $('#overlay'), cvList: $('#cv-list'),
+    welcome: $('#welcome'), msgs: $('#msgs'), chat: $('#chat'),
+    inp: $('#msg-inp'), iw: $('#iw'), send: $('#send-btn'),
+    att: $('#att-btn'), fInp: $('#f-inp'), fBar: $('#fbar'),
+    nc: $('#nc-btn'), sbTog: $('#sb-tog'), thTop: $('#th-top'),
+    thSb: $('#th-sb'), ca: $('#ca-btn'), toasts: $('#toasts'),
+    modelBtn: $('#model-btn'), modelMenu: $('#model-menu'),
+    modelName: $('#model-name'), tbTitle: $('#tb-title'),
+    modelDd: $('#model-dd'),
+
+    // Extensions
+    sysBtn: $('#sys-prompt-btn'), sysPanel: $('#sys-panel'),
+    sysTa: $('#sys-ta'), sysSet: $('#set-global-btn'), sysClr: $('#clear-global-btn'),
+    warn: $('#vision-warn'), warnModel: $('#warn-model')
+};
+
+// ÔöÇÔöÇ Init ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+async function init() {
+    setupMarked();
+    applyTheme(S.theme);
+    if (!S.sbOpen) D.sb.classList.add('off');
+
+    await loadGlobalPrompt();
+    await fetchModels();
+    await load();
+
+    renderSB();
+    renderChat();
+    bind();
+
+    if (S.convs.length > 0) switchConv(S.convs[0].id);
+
+    pollHW();
+    setInterval(pollHW, 5000);
+    setInterval(fetchModels, 15000);
 }
 
-// ── Chat list ─────────────────────────────────────────────
-function newChat() {
-  const id = Date.now().toString();
-  // New chats inherit the global system prompt automatically
-  allChats.unshift({ id, title:'New Chat', model:'', systemPrompt: globalSystemPrompt, messages:[] });
-  saveChats();
-  renderList();
-  switchChat(id);
+// ÔöÇÔöÇ Hardware Stats ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+async function pollHW() {
+    if (!IS_SERVED) return;
+    try {
+        const r = await fetch('/api/stats');
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.ram_percent === -1) return;
+        setBar('cpu', d.cpu_percent);
+        setBar('ram', d.ram_percent);
+    } catch {}
 }
-function getChat(id) { return allChats.find(c => c.id === id); }
-function getActive() { return getChat(activeChatId); }
+function setBar(type, pct) {
+    const bar = $(`#${type}-bar`); const lbl = $(`#${type}-pct`);
+    if (!bar) return;
+    bar.style.transform = `scaleX(${Math.max(0,Math.min(100,pct))/100})`;
+    lbl.textContent = pct + '%';
+    lbl.className = 'hw-pct' + (pct>=90?' danger':pct>=70?' warn':'');
+}
 
-function renderList() {
-  const el = document.getElementById('chat-list');
-  if (!allChats.length) { el.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text-d);text-align:center;">No chats yet</div>'; return; }
-  el.innerHTML = allChats.map(c => `
-    <div class="chat-item ${c.id === activeChatId ? 'active' : ''}" onclick="switchChat('${c.id}')" id="ci-${c.id}">
-      <span class="chat-icon">💬</span>
-      <span class="chat-title" title="${esc(c.title)}">${esc(c.title)}</span>
-      <button class="chat-del" onclick="event.stopPropagation();deleteChat('${c.id}')" title="Delete">✕</button>
-    </div>`).join('');
+// ÔöÇÔöÇ Global Prompt ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+async function loadGlobalPrompt() {
+    if (IS_SERVED) {
+        try { const r = await fetch('/api/settings'); if (r.ok) { const s = await r.json(); S.globalSys = s.globalSystemPrompt || ''; } } catch {}
+    } else { S.globalSys = localStorage.getItem('globalSystemPrompt') || ''; }
+    updateSysUI();
 }
-function switchChat(id) {
-  activeChatId = id;
-  const chat = getChat(id);
-  if (!chat) return;
-  document.getElementById('sys-ta').value = chat.systemPrompt || '';
-  const box = document.getElementById('chat-box');
-  box.innerHTML = '';
-  if (!chat.messages.length) {
-    showWelcome();
-  } else {
-    chat.messages.forEach(m => {
-      appendBubble(m.content, m.role === 'user' ? 'user' : 'ai', m._imgB64, m._imgMime);
+async function saveGlobalPrompt() {
+    S.globalSys = D.sysTa.value.trim();
+    if (IS_SERVED) {
+        try { await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({globalSystemPrompt:S.globalSys}) }); } catch {}
+    } else { localStorage.setItem('globalSystemPrompt', S.globalSys); }
+    updateSysUI(); toast('Default prompt saved');
+}
+async function clearGlobalPrompt() {
+    S.globalSys = ''; D.sysTa.value = '';
+    if (IS_SERVED) {
+        try { await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({globalSystemPrompt:''}) }); } catch {}
+    } else { localStorage.removeItem('globalSystemPrompt'); }
+    updateSysUI(); toast('Default prompt cleared');
+}
+function updateSysUI() {
+    if (S.globalSys) D.sysBtn.classList.add('has-global'); else D.sysBtn.classList.remove('has-global');
+}
+
+// ÔöÇÔöÇ Models ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function isVision(name) { return VISION_MODELS.some(v=>(name||'').toLowerCase().includes(v)); }
+
+async function fetchModels() {
+    try {
+        const r = await fetch(OLLAMA + '/api/tags');
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        S.models = d.models || [];
+        renderModelMenu();
+        if (S.models.length && (!S.model || !S.models.find(m=>m.name===S.model))) {
+            applyModel(S.models[0].name);
+        } else if (S.model) {
+            applyModel(S.model);
+        }
+    } catch {
+        D.modelMenu.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);text-align:center;">Engine Offline</div>';
+    }
+}
+
+function renderModelMenu() {
+    if (!S.models.length) return;
+    D.modelMenu.innerHTML = S.models.map(m => `
+        <div class="mm-opt ${m.name===S.model?'sel':''}" data-model="${m.name}">
+            <div class="mmo-icon"><i class="fa-solid ${isVision(m.name)?'fa-eye':'fa-microchip'}"></i></div>
+            <div class="mmo-info">
+                <div class="mmo-name">${esc(m.name)}</div>
+                <div class="mmo-desc">${(m.size/1e9).toFixed(1)} GB</div>
+            </div>
+            <i class="fa-solid fa-check mmo-chk"></i>
+        </div>`).join('');
+
+    $$('.mm-opt').forEach(opt => opt.addEventListener('click', e => {
+        e.stopPropagation();
+        const model = opt.dataset.model;
+        applyModel(model);
+        const conv = getConv();
+        if (conv) { conv.model = model; save(); }
+        toggleModelMenu(false);
+    }));
+}
+
+function applyModel(model) {
+    S.model = model;
+    localStorage.setItem('g-model', model);
+    D.modelName.textContent = model;
+    $$('.mm-opt').forEach(opt => opt.classList.toggle('sel', opt.dataset.model===model));
+    checkVisionWarn();
+}
+
+function toggleModelMenu(show) {
+    const isOpen = D.modelMenu.classList.contains('on');
+    const shouldOpen = show !== undefined ? show : !isOpen;
+    D.modelMenu.classList.toggle('on', shouldOpen);
+    D.modelBtn.classList.toggle('open', shouldOpen);
+}
+
+// ÔöÇÔöÇ File Attachments ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function handleAttach(file) {
+    if (!file) return;
+    const name = file.name.toLowerCase();
+    if (file.type.startsWith('image/')) {
+        handleImg(file);
+    } else if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
+        handlePdf(file);
+    } else if (file.type === 'text/plain' || name.endsWith('.md') || name.endsWith('.txt')) {
+        handleText(file);
+    } else {
+        toast('File format not supported');
+    }
+}
+
+function handleImg(file) {
+    clearPdf();
+    const reader = new FileReader();
+    reader.onload = e => {
+        S.imgB64 = e.target.result.split(',')[1];
+        S.imgMime = file.type;
+        D.fBar.innerHTML = `<div class="img-preview"><img src="${e.target.result}"><button class="f-rm" onclick="clearImage()"><i class="fa-solid fa-xmark"></i></button></div>`;
+        D.fBar.classList.add('on');
+        checkVisionWarn(); updateSend();
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearImage() {
+    S.imgB64=null; S.imgMime=null; D.fBar.classList.remove('on'); D.fBar.innerHTML=''; checkVisionWarn(); updateSend();
+}
+
+function checkVisionWarn() {
+    if (!S.imgB64) { D.warn.classList.remove('on'); return; }
+    if (!isVision(S.model)) { D.warnModel.textContent=S.model; D.warn.classList.add('on'); }
+    else D.warn.classList.remove('on');
+}
+
+let pdfJsLoading = false;
+async function ensurePdfJs() {
+    if (window.pdfjsLib) return true;
+    if (pdfJsLoading) return new Promise(res => { const iv=setInterval(()=>{ if(window.pdfjsLib||window._pdfFailed){clearInterval(iv);res(!!window.pdfjsLib);}},100); });
+    pdfJsLoading=true;
+    try {
+        const m = await import('./vendor/pdf.min.mjs');
+        window.pdfjsLib=m;
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.mjs';
+        return true;
+    } catch { window._pdfFailed=true; return false; }
+}
+
+async function handlePdf(file) {
+    clearImage();
+    S.pdfName=file.name;
+    D.fBar.innerHTML=`<div class="pdf-preview"><i class="fa-solid fa-file-pdf" style="color:var(--grad1);font-size:22px;"></i><div class="p-info"><strong>${esc(file.name)}</strong><span id="pdf-prog">Loading PDF.jsÔÇª</span></div><button class="f-rm" onclick="clearPdf()"><i class="fa-solid fa-xmark"></i></button></div>`;
+    D.fBar.classList.add('on'); updateSend();
+
+    const ok = await ensurePdfJs();
+    const prog = document.getElementById('pdf-prog');
+    if (!ok) { if(prog) prog.textContent='PDF engine failed'; return; }
+    if(prog) prog.textContent='ExtractingÔÇª';
+
+    try {
+        const buf = await file.arrayBuffer();
+        const pdf = await window.pdfjsLib.getDocument({data:buf}).promise;
+        let text='';
+        for (let i=1;i<=pdf.numPages;i++) {
+            const pg=await pdf.getPage(i); const c=await pg.getTextContent();
+            text+=`--- Page ${i} ---\n`+c.items.map(x=>x.str).join(' ')+'\n\n';
+        }
+        S.pdfText=text.trim(); S.pdfPages=pdf.numPages;
+        if(prog) prog.textContent=`${pdf.numPages} page${pdf.numPages>1?'s':''}`;
+        updateSend();
+    } catch(e) { if(prog) prog.textContent='Error parsing'; S.pdfText=null; updateSend(); }
+}
+
+function clearPdf() {
+    S.pdfText=null; S.pdfName=null; D.fBar.classList.remove('on'); D.fBar.innerHTML=''; updateSend();
+}
+
+async function handleText(file) {
+    clearImage();
+    clearPdf();
+    const text = await file.text();
+    S.pdfText = text;         // reuses the PDF context pipeline
+    S.pdfName = file.name;
+    D.fBar.innerHTML = `<div class="pdf-preview"><i class="fa-solid fa-file-lines" style="color:var(--grad1);font-size:22px;"></i><div class="p-info"><strong>${esc(file.name)}</strong><span>Text file &#183; ~${text.length.toLocaleString()} chars</span></div><button class="f-rm" onclick="clearPdf()"><i class="fa-solid fa-xmark"></i></button></div>`;
+    D.fBar.classList.add('on');
+    updateSend();
+}
+
+// ÔöÇÔöÇ Conversation CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function createConv() {
+    const c={id:gid(),title:'New chat',msgs:[],ts:Date.now(),model:S.model,sys:S.globalSys};
+    S.convs.unshift(c);
+    save(); switchConv(c.id); renderSB(); D.inp.focus();
+}
+
+function delConv(id) {
+    S.convs=S.convs.filter(c=>c.id!==id);
+    save();
+    if (S.curId===id) { S.curId=null; S.convs.length>0?switchConv(S.convs[0].id):renderChat(); }
+    renderSB(); toast('Chat deleted');
+}
+
+function clearAll() { S.convs=[]; S.curId=null; save(); renderSB(); renderChat(); toast('All chats cleared'); }
+
+function switchConv(id) {
+    S.curId=id; const conv=getConv();
+    if (conv&&conv.model) applyModel(conv.model);
+    D.sysTa.value=conv?.sys||'';
+    renderChat(); renderSB(); updateTitle();
+    if (window.innerWidth<=768) toggleSB(false);
+}
+function getConv() { return S.convs.find(c=>c.id===S.curId); }
+
+// ÔöÇÔöÇ Send / Stream to Ollama ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+async function sendMsg(text) {
+    if ((!text.trim()&&!S.imgB64&&!S.pdfText)||S.streaming) return;
+
+    let conv=getConv();
+    if (!conv) {
+        conv={id:gid(),title:'New chat',msgs:[],ts:Date.now(),model:S.model,sys:D.sysTa.value.trim()};
+        S.convs.unshift(conv); S.curId=conv.id;
+    } else {
+        conv.model=S.model; conv.sys=D.sysTa.value.trim();
+        // Defensive: heal conv that somehow has no msgs array
+        if (!Array.isArray(conv.msgs)) conv.msgs=[];
+    }
+
+    let finalText=text.trim();
+    if (S.pdfText) {
+        const snip=S.pdfText.length>12000?S.pdfText.slice(0,12000)+'\n\n[truncatedÔÇª]':S.pdfText;
+        finalText=`PDF attached: "${S.pdfName}"\n\n${snip}\n\n---\nUser: ${text}`;
+    }
+
+    const msgObj={id:gid(),role:'user',content:finalText,ts:Date.now()};
+    if (S.imgB64) { msgObj.images=[S.imgB64]; msgObj._imgB64=S.imgB64; msgObj._imgMime=S.imgMime; }
+    if (S.pdfText) { msgObj._pdfName=S.pdfName; }
+
+    conv.msgs.push(msgObj);
+    if (conv.msgs.length===1) conv.title=text.trim().substring(0,40)+(text.trim().length>40?'ÔÇª':'');
+
+    D.inp.value=''; D.inp.style.height='auto'; D.iw.classList.remove('ht');
+    clearImage(); clearPdf(); updateSend(); save(); renderChat(); renderSB(); updateTitle(); scrollEnd();
+
+    await streamOllama(conv);
+}
+
+async function streamOllama(conv) {
+    S.streaming=true; updateSend();
+
+    const aiMsg={id:gid(),role:'assistant',content:'',ts:Date.now(),liked:false,disliked:false};
+    conv.msgs.push(aiMsg);
+    renderChat(); scrollEnd();
+
+    const lastRow=D.msgs.lastElementChild;
+    const contentEl=lastRow?lastRow.querySelector('.mt'):null;
+    if (contentEl) contentEl.innerHTML='<div class="typ"><span></span><span></span><span></span></div>';
+
+    S.abort=new AbortController();
+    let apiMsgs=[];
+    if (conv.sys) apiMsgs.push({role:'system',content:conv.sys});
+    conv.msgs.slice(0,-1).forEach(m=>{
+        const am={role:m.role,content:m.content};
+        if (m.images) am.images=m.images;
+        apiMsgs.push(am);
     });
-  }
-  // Lock model display if chat has messages
-  const ms = document.getElementById('model-select');
-  const ml = document.getElementById('model-locked');
-  if (chat.messages.length && chat.model) {
-    ms.style.display = 'none';
-    ml.style.display = 'inline';
-    ml.textContent = chat.model;
-  } else {
-    ms.style.display = '';
-    ml.style.display = 'none';
-  }
-  renderList();
+
+    try {
+        const res=await fetch(OLLAMA+'/api/chat',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({model:conv.model,messages:apiMsgs,stream:true}),
+            signal:S.abort.signal
+        });
+        if (!res.ok) throw new Error('Ollama error '+res.status);
+
+        const reader=res.body.getReader();
+        const dec=new TextDecoder();
+        if (contentEl) contentEl.innerHTML='';
+
+        while (true) {
+            const {done,value}=await reader.read();
+            if (done) break;
+            const chunk=dec.decode(value,{stream:true});
+            for (const line of chunk.split('\n')) {
+                if (!line.trim()) continue;
+                try {
+                    const p=JSON.parse(line);
+                    if (p.message?.content) {
+                        aiMsg.content+=p.message.content;
+                        if (contentEl) contentEl.textContent=aiMsg.content;
+                        scrollEnd();
+                    }
+                } catch {}
+            }
+        }
+        if (contentEl) {
+            contentEl.innerHTML=renderMd(aiMsg.content);
+            contentEl.querySelectorAll('pre code').forEach(b=>{ if(!b.classList.contains('hljs')) hljs.highlightElement(b); });
+        }
+    } catch(err) {
+        if (err.name==='AbortError') {
+            if (aiMsg.content) { if(contentEl) contentEl.innerHTML=renderMd(aiMsg.content); }
+            else if(contentEl) contentEl.innerHTML='<span style="color:var(--t3);font-style:italic;">[Stopped]</span>';
+        } else {
+            if(contentEl) contentEl.innerHTML=`<span style="color:var(--red);">ÔÜá ${esc(err.message)}</span>`;
+            conv.msgs.pop();
+        }
+    } finally {
+        S.streaming=false; updateSend(); save(); scrollEnd();
+        setTimeout(()=>D.inp.focus(),100);
+    }
 }
-function deleteChat(id) {
-  allChats = allChats.filter(c => c.id !== id);
-  saveChats();
-  if (activeChatId === id) {
-    activeChatId = null;
-    if (allChats.length) switchChat(allChats[0].id);
-    else { document.getElementById('chat-box').innerHTML = ''; showWelcome(); renderList(); }
-  } else renderList();
+
+function stopStream() { if (S.abort) S.abort.abort(); }
+
+// ÔöÇÔöÇ Markdown ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function setupMarked() {
+    if (typeof marked==='undefined') return;
+    const rdr=new marked.Renderer();
+    rdr.code=(code,lang)=>{
+        const sl=esc(lang||''); const dl=sl||'code';
+        let hi=esc(code);
+        if (typeof hljs!=='undefined') {
+            try { hi=(lang&&hljs.getLanguage(lang))?hljs.highlight(code,{language:lang}).value:hljs.highlightAuto(code).value; } catch{}
+        }
+        return `<div class="cblk"><div class="cbh"><span>${dl}</span><button class="cbc-btn" onclick="copyCB(this)"><i class="fa-regular fa-copy"></i> Copy</button></div><pre><code class="hljs${sl?' language-'+sl:''}">${hi}</code></pre></div>`;
+    };
+    marked.setOptions({gfm:true,breaks:true,renderer:rdr});
 }
-function showWelcome() {
-  document.getElementById('chat-box').innerHTML = `
-    <div class="welcome">
-      <h2>Ready to Chat</h2>
-      <p>Select a model and start typing.<br>Conversations auto-save to the USB drive.</p>
+function renderMd(text) {
+    if (typeof marked==='undefined') return esc(text).replace(/\n/g,'<br>');
+    return marked.parse(text,{breaks:true});
+}
+
+// ÔöÇÔöÇ Rendering ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function renderSB() {
+    D.cvList.innerHTML = S.convs.map(c=>`
+        <div class="cv ${c.id===S.curId?'act':''}" onclick="switchConv('${c.id}')">
+            <i class="fa-regular fa-message ci"></i>
+            <span class="ct">${esc(c.title)}</span>
+            <button class="cd" onclick="event.stopPropagation();delConv('${c.id}')" aria-label="Delete chat">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>`).join('');
+}
+
+function renderChat() {
+    const conv=getConv();
+    if (!conv||conv.msgs.length===0) {
+        D.welcome.style.display='flex'; D.msgs.classList.remove('on'); D.msgs.innerHTML=''; D.tbTitle.textContent=''; return;
+    }
+    D.welcome.style.display='none'; D.msgs.classList.add('on'); D.tbTitle.textContent=conv.title;
+
+    D.msgs.innerHTML=conv.msgs.map((msg,i)=>
+        msg.role==='user'?renderUser(msg):renderAI(msg,i===conv.msgs.length-1)
+    ).join('');
+
+    D.msgs.querySelectorAll('pre code:not(.hljs)').forEach(b=>{hljs.highlightElement(b);});
+    scrollEnd();
+}
+
+function renderUser(msg) {
+    let media='';
+    if (msg._imgB64) media+=`<img class="msg-img" src="data:${msg._imgMime||'image/jpeg'};base64,${msg._imgB64}">`;
+    if (msg._pdfName) media+=`<div class="msg-pdf-pill"><i class="fa-solid fa-file-pdf" style="color:var(--grad1)"></i>${esc(msg._pdfName)}</div>`;
+
+    let rawTxt=msg.content;
+    if (msg._pdfName&&rawTxt.includes('PDF attached:')) {
+        rawTxt=rawTxt.split('---\nUser: ').pop()||'';
+    }
+    return `<div class="mr usr"><div class="mc"><div class="ub"><div class="mt">${media}${esc(rawTxt)}</div></div></div><div class="ma u">U</div></div>`;
+}
+
+function renderAI(msg, isLast) {
+    const parsed=S.streaming&&isLast?esc(msg.content):renderMd(msg.content);
+    const actions=(!S.streaming||!isLast)?`
+        <div class="mact">
+            <button class="mab" onclick="copyMsg('${msg.id}')" title="Copy"><i class="fa-regular fa-copy"></i></button>
+            <button class="mab ${msg.liked?'lk':''}" onclick="rateMsg('${msg.id}','like')" title="Good response"><i class="fa-regular fa-thumbs-up"></i></button>
+            <button class="mab ${msg.disliked?'dlk':''}" onclick="rateMsg('${msg.id}','dislike')" title="Bad response"><i class="fa-regular fa-thumbs-down"></i></button>
+        </div>`:'';
+
+    return `<div class="mr">
+        <div class="ma ai"><svg viewBox="0 0 24 24"><path d="M12 2L14.09 8.26L21 9.27L16 14.14L17.18 21.02L12 17.77L6.82 21.02L8 14.14L3 9.27L9.91 8.26L12 2Z" fill="white"/></svg></div>
+        <div class="mc"><div class="mt">${parsed||''}</div>${actions}</div>
     </div>`;
 }
 
-// ── Bubble rendering ─────────────────────────────────────
-function appendBubble(text, side, imgB64, imgMime) {
-  const box = document.getElementById('chat-box');
-  // Remove welcome if present
-  const w = box.querySelector('.welcome');
-  if (w) w.remove();
-
-  const wrap = document.createElement('div');
-  wrap.className = `msg-wrap ${side}`;
-  const bub = document.createElement('div');
-  bub.className = `bubble ${side}`;
-
-  if (side === 'user') {
-    if (imgB64) {
-      const img = document.createElement('img');
-      img.className = 'msg-img';
-      img.src = `data:${imgMime||'image/png'};base64,${imgB64}`;
-      bub.appendChild(img);
-    }
-    bub.appendChild(document.createTextNode(text));
-  } else {
-    bub.innerHTML = renderMd(text);
-    bub.querySelectorAll('pre code').forEach(addCopy);
-  }
-  wrap.appendChild(bub);
-  box.appendChild(wrap);
-  box.scrollTop = box.scrollHeight;
-  return bub;
+// ÔöÇÔöÇ Actions ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function copyMsg(id) { const m=getConv()?.msgs.find(x=>x.id===id); if(m) navigator.clipboard.writeText(m.content).then(()=>toast('Copied')); }
+function rateMsg(id,r) {
+    const m=getConv()?.msgs.find(x=>x.id===id); if(!m) return;
+    if(r==='like'){m.liked=!m.liked;m.disliked=false;}else{m.disliked=!m.disliked;m.liked=false;}
+    save(); renderChat();
 }
-
-// ── Markdown ─────────────────────────────────────────────
-function setupMarked() {
-  if (typeof marked === 'undefined') return;
-  const hljsOk = typeof hljs !== 'undefined';
-  const rdr = new marked.Renderer();
-  rdr.code = (code, lang) => {
-    const sl = esc(lang || '');
-    const dl = sl || 'code';
-    let hi = esc(code);
-    if (hljsOk) {
-      try { hi = (lang && hljs.getLanguage(lang)) ? hljs.highlight(code,{language:lang}).value : hljs.highlightAuto(code).value; } catch{}
-    }
-    return `<pre><div class="code-header"><span>${dl}</span><button class="copy-btn" onclick="(function(b){navigator.clipboard.writeText(b.closest('pre').querySelector('code').innerText).then(()=>{b.textContent='Copied!';b.classList.add('copied');setTimeout(()=>{b.textContent='Copy';b.classList.remove('copied')},2000)})})(this)">Copy</button></div><code class="hljs${sl?' language-'+sl:''}">${hi}</code></pre>`;
-  };
-  marked.setOptions({ gfm:true, breaks:true, renderer:rdr });
-}
-function renderMd(text) {
-  if (typeof marked === 'undefined') return esc(text).replace(/\n/g,'<br>');
-  return marked.parse(text, { breaks:true });
-}
-function finalizeMsg(el, text) {
-  el.innerHTML = renderMd(text);
-  if (typeof hljs !== 'undefined') el.querySelectorAll('pre code:not(.hljs)').forEach(b => { hljs.highlightElement(b); addCopy(b); });
-  document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-}
-function addCopy(codeEl) {
-  const pre = codeEl.parentElement;
-  if (pre.querySelector('.code-header')) return;
-  const lang = (codeEl.className.match(/language-(\S+)/)||[])[1]||'code';
-  const hdr = document.createElement('div');
-  hdr.className = 'code-header';
-  hdr.innerHTML = `<span>${esc(lang)}</span><button class="copy-btn">Copy</button>`;
-  hdr.querySelector('.copy-btn').addEventListener('click', function(){
-    navigator.clipboard.writeText(codeEl.innerText).then(()=>{
-      this.textContent='Copied!';this.classList.add('copied');
-      setTimeout(()=>{this.textContent='Copy';this.classList.remove('copied')},2000);
+function copyCB(btn) {
+    const code=btn.closest('.cblk').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(()=>{
+        btn.innerHTML='<i class="fa-solid fa-check"></i> Copied';
+        setTimeout(()=>btn.innerHTML='<i class="fa-regular fa-copy"></i> Copy',2000);
     });
-  });
-  pre.insertBefore(hdr, pre.firstChild);
-}
-function esc(s) {
-  const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML;
 }
 
-function injectScript(src) {
-  return new Promise(resolve => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.head.appendChild(s);
-  });
+function applyTheme(t) {
+    S.theme=t; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('g-theme',t);
+    const ic=t==='dark'?'fa-moon':'fa-sun';
+    D.thTop.querySelector('i').className='fa-solid '+ic;
+    D.thSb.querySelector('i').className='fa-solid '+ic;
+}
+function toggleTheme() { applyTheme(S.theme==='dark'?'light':'dark'); }
+function toggleSB(force) {
+    S.sbOpen=force!==undefined?force:!S.sbOpen;
+    D.sb.classList.toggle('off',!S.sbOpen);
+    D.ov.classList.toggle('on',S.sbOpen&&window.innerWidth<=768);
 }
 
-function injectStyle(href) {
-  return new Promise(resolve => {
-    const l = document.createElement('link');
-    l.rel = 'stylesheet';
-    l.href = href;
-    l.onload = () => resolve(true);
-    l.onerror = () => resolve(false);
-    document.head.appendChild(l);
-  });
+function updateSend() {
+    const has=D.inp.value.trim().length>0||S.imgB64||S.pdfText;
+    D.iw.classList.toggle('ht',has);
+    if (S.streaming) {
+        D.send.className='ib2 stbtn';
+        D.send.innerHTML='<i class="fa-solid fa-stop"></i>';
+        D.send.disabled=false;
+    } else {
+        D.send.className='ib2 sbtn'+(has?' on':'');
+        D.send.innerHTML='<i class="fa-solid fa-arrow-up"></i>';
+        D.send.disabled=!has;
+    }
+}
+function autoResize() { D.inp.style.height='auto'; D.inp.style.height=Math.min(D.inp.scrollHeight,200)+'px'; }
+function scrollEnd() { D.chat.scrollTop=D.chat.scrollHeight; }
+function updateTitle() { D.tbTitle.textContent=getConv()?.title||''; }
+function toast(msg) {
+    const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+    D.toasts.appendChild(t); setTimeout(()=>t.remove(),2600);
 }
 
-async function loadOptionalScript(globalName, localSrc, cdnSrc) {
-  if (window[globalName]) return true;
-  const localOk = await injectScript(localSrc);
-  if (localOk && window[globalName]) return true;
-  if (!navigator.onLine) return false;
-  const cdnOk = await injectScript(cdnSrc);
-  return !!(cdnOk && window[globalName]);
-}
-
-async function loadOptionalCss(localHref, cdnHref) {
-  const localOk = await injectStyle(localHref);
-  if (localOk) return true;
-  if (!navigator.onLine) return false;
-  return injectStyle(cdnHref);
-}
-
-async function loadUiDependencies() {
-  await Promise.all([
-    loadOptionalScript('marked', './vendor/marked.min.js', 'https://cdn.jsdelivr.net/npm/marked@12/marked.min.js'),
-    loadOptionalScript('hljs', './vendor/highlight.min.js', 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js'),
-    loadOptionalCss('./vendor/highlight-github-dark.min.css', 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github-dark.min.css')
-  ]);
-}
-
-// ── Model fetching ───────────────────────────────────────
-async function fetchModels() {
-  const sel = document.getElementById('model-select');
-  const dot = document.getElementById('status-dot');
-  const txt = document.getElementById('status-text');
-  try {
-    const r = await fetch(OLLAMA + '/api/tags');
-    if (!r.ok) throw new Error();
-    const d = await r.json();
-    const prev = sel.value;
-    sel.innerHTML = '';
-    d.models.forEach(m => {
-      const o = document.createElement('option');
-      o.value = m.name; o.textContent = m.name;
-      if (m.name === prev) o.selected = true;
-      sel.appendChild(o);
-    });
-    dot.className = 'online';
-    txt.textContent = `Engine Online — ${d.models.length} model(s)`;
-  } catch {
-    dot.className = '';
-    txt.textContent = 'Engine Offline';
-  }
-}
-
-// ── Hardware stats ───────────────────────────────────────
-async function pollHW() {
-  if (!IS_SERVED) { document.getElementById('hw-offline').textContent = 'Run via server for stats'; document.getElementById('hw-offline').style.display='inline'; return; }
-  try {
-    const r = await fetch('/api/stats');
-    if (!r.ok) throw new Error();
-    const d = await r.json();
-    if (d.ram_percent === -1) { document.getElementById('hw-offline').textContent = 'Stats unavailable'; document.getElementById('hw-offline').style.display='inline'; return; }
-    document.getElementById('hw-offline').style.display = 'none';
-    setBar('cpu', d.cpu_percent);
-    setBar('ram', d.ram_percent);
-  } catch { document.getElementById('hw-offline').textContent = 'No stats'; document.getElementById('hw-offline').style.display='inline'; }
-}
-function setBar(type, pct) {
-  // Use transform:scaleX instead of width — GPU only, no layout
-  const bar = document.getElementById(`${type}-bar`);
-  const lbl = document.getElementById(`${type}-pct`);
-  if (!bar) return;
-  bar.style.transform = `scaleX(${Math.max(0,Math.min(100,pct))/100})`;
-  lbl.textContent = pct + '%';
-  lbl.className = 'hw-pct' + (pct>=90?' danger':pct>=70?' warn':'');
-}
-
-// ── Global system prompt ─────────────────────────────────
-// ── Global system prompt (saved to USB via /api/settings) ───────
-async function loadGlobalPrompt() {
-  if (IS_SERVED) {
-    try {
-      const r = await fetch('/api/settings');
-      if (r.ok) {
-        const s = await r.json();
-        globalSystemPrompt = s.globalSystemPrompt || '';
-      }
-    } catch {}
-  } else {
-    // Fallback: localStorage when opened as a file directly
-    globalSystemPrompt = localStorage.getItem('globalSystemPrompt') || '';
-  }
-  updateGlobalIndicator();
-  // Also show status if already active
-  if (globalSystemPrompt) {
-    const status = document.getElementById('global-status');
-    if (status) { status.textContent = '(active for all new chats)'; }
-  }
-}
-async function saveGlobalPrompt() {
-  const val = document.getElementById('sys-ta').value.trim();
-  globalSystemPrompt = val;
-  updateGlobalIndicator();
-  const status = document.getElementById('global-status');
-  try {
+// ÔöÇÔöÇ Persistence ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+let saveTimer=null;
+function save() {
     if (IS_SERVED) {
-      // Load existing settings first so we don't overwrite other keys
-      let existing = {};
-      try { const r = await fetch('/api/settings'); if (r.ok) existing = await r.json(); } catch {}
-      existing.globalSystemPrompt = val;
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(existing)
-      });
-    } else {
-      localStorage.setItem('globalSystemPrompt', val);
-    }
-    status.textContent = val ? '✓ Saved to USB!' : '✓ Cleared';
-    status.style.color = 'var(--green)';
-  } catch {
-    status.textContent = '⚠ Save failed';
-    status.style.color = 'var(--red)';
-  }
-  setTimeout(() => { status.textContent = globalSystemPrompt ? '(active for all new chats)' : ''; status.style.color = ''; }, 2000);
+        clearTimeout(saveTimer);
+        saveTimer=setTimeout(()=>fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S.convs)}).catch(()=>{}),800);
+    } else { try{localStorage.setItem('g-convs',JSON.stringify(S.convs));}catch(e){} }
 }
-async function clearGlobalPrompt() {
-  globalSystemPrompt = '';
-  updateGlobalIndicator();
-  const status = document.getElementById('global-status');
-  try {
-    if (IS_SERVED) {
-      let existing = {};
-      try { const r = await fetch('/api/settings'); if (r.ok) existing = await r.json(); } catch {}
-      existing.globalSystemPrompt = '';
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(existing)
-      });
-    } else {
-      localStorage.removeItem('globalSystemPrompt');
-    }
-    status.textContent = '✓ Cleared';
-    status.style.color = 'var(--red)';
-  } catch {}
-  setTimeout(() => { status.textContent = ''; status.style.color = ''; }, 2000);
+async function load() {
+    if (IS_SERVED) { try{const r=await fetch('/api/chats');if(r.ok) S.convs=await r.json();}catch{} }
+    else { try{const d=localStorage.getItem('g-convs');if(d) S.convs=JSON.parse(d);}catch(e){S.convs=[];} }
+    // ÔöÇÔöÇ Sanitize: heal any conversation that is missing required fields
+    // (handles old schema that used `messages` instead of `msgs`, or any
+    //  partial/corrupted entries that snuck in from a previous version)
+    S.convs = (Array.isArray(S.convs) ? S.convs : []).map(c => ({
+        id:    c.id    || gid(),
+        title: c.title || 'Untitled',
+        ts:    c.ts    || Date.now(),
+        model: c.model || '',
+        sys:   c.sys   || '',
+        // migrate old `messages` key ÔåÆ `msgs`; fall back to []
+        msgs:  Array.isArray(c.msgs)     ? c.msgs
+             : Array.isArray(c.messages) ? c.messages
+             : []
+    }));
 }
 
-function updateGlobalIndicator() {
-  const btn = document.getElementById('sys-prompt-btn');
-  const dot = document.getElementById('sys-global-dot');
-  if (globalSystemPrompt) {
-    btn.classList.add('has-global');
-    dot.style.display = 'block';
-    btn.title = 'Global prompt active: ' + globalSystemPrompt.substring(0, 60) + (globalSystemPrompt.length > 60 ? '…' : '');
-  } else {
-    btn.classList.remove('has-global');
-    dot.style.display = 'none';
-    btn.title = '';
-  }
-}
+function gid() { return Date.now().toString(36)+Math.random().toString(36).substring(2,8); }
+function esc(t) { const d=document.createElement('div');d.textContent=t;return d.innerHTML; }
 
-// ── System prompt panel ──────────────────────────────────
-function toggleSysPanel() {
-  document.getElementById('sys-panel').classList.toggle('open');
-}
-
-// ── Attach files ─────────────────────────────────────────
-const VISION_MODELS = ['llava','moondream','bakllava','vision','minicpm-v','cogvlm','qwen-vl','phi-3-vision'];
-function isVision(name) { return VISION_MODELS.some(v=>(name||'').toLowerCase().includes(v)); }
-
-function handleAttach(file) {
-  if (!file) return;
-  document.getElementById('attach-file').value = '';
-  if (file.type.startsWith('image/')) handleImg(file);
-  else if (file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')) handlePdf(file);
-}
-function handleImg(file) {
-  clearPdf();
-  const reader = new FileReader();
-  reader.onload = e => {
-    const durl = e.target.result;
-    attachImgB64 = durl.split(',')[1];
-    attachImgMime = file.type;
-    document.getElementById('img-thumb').src = durl;
-    document.getElementById('img-name').textContent = file.name;
-    document.getElementById('img-preview').classList.add('show');
-    checkVisionWarn();
-  };
-  reader.readAsDataURL(file);
-}
-function clearImage() {
-  attachImgB64 = null; attachImgMime = null;
-  document.getElementById('img-preview').classList.remove('show');
-  document.getElementById('img-thumb').src = '';
-  document.getElementById('vision-warn').classList.remove('show');
-}
-function checkVisionWarn() {
-  if (!attachImgB64) { document.getElementById('vision-warn').classList.remove('show'); return; }
-  const model = document.getElementById('model-select').value || document.getElementById('model-locked').textContent;
-  if (!isVision(model)) {
-    document.getElementById('warn-model').textContent = model;
-    document.getElementById('vision-warn').classList.add('show');
-  } else document.getElementById('vision-warn').classList.remove('show');
-}
-document.getElementById('model-select').addEventListener('change', checkVisionWarn);
-
-// PDF — lazy-load PDF.js only when needed
-let pdfJsLoading = false;
-async function ensurePdfJs() {
-  if (window.pdfjsLib) return true;
-  if (pdfJsLoading) {
-    return new Promise(res => { const iv = setInterval(()=>{ if(window.pdfjsLib||window._pdfFailed){clearInterval(iv);res(!!window.pdfjsLib);} },100); });
-  }
-  pdfJsLoading = true;
-  try {
-    const localMod = await import('./vendor/pdf.min.mjs');
-    window.pdfjsLib = localMod;
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs';
-    return true;
-  } catch {}
-  if (!navigator.onLine) { window._pdfFailed = true; return false; }
-  try {
-    const cdnMod = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.min.mjs');
-    window.pdfjsLib = cdnMod;
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.worker.min.mjs';
-    return true;
-  } catch { window._pdfFailed = true; return false; }
-}
-async function handlePdf(file) {
-  clearImage();
-  attachPdfName = file.name;
-  const pgEl = document.getElementById('pdf-pages');
-  document.getElementById('pdf-name').textContent = file.name;
-  pgEl.textContent = 'Loading PDF.js…';
-  document.getElementById('pdf-preview').classList.add('show');
-  const ok = await ensurePdfJs();
-  if (!ok) { pgEl.textContent = '⚠ PDF text extraction unavailable (offline or missing vendor assets)'; return; }
-  pgEl.textContent = 'Extracting text…';
-  try {
-    const buf = await file.arrayBuffer();
-    const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-    let text = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const pg = await pdf.getPage(i);
-      const c  = await pg.getTextContent();
-      text += `--- Page ${i} ---\n` + c.items.map(x=>x.str).join(' ') + '\n\n';
-    }
-    attachPdfText = text.trim();
-    const words = text.split(/\s+/).length;
-    pgEl.textContent = `${pdf.numPages} page${pdf.numPages>1?'s':''} · ~${words.toLocaleString()} words`;
-  } catch(e) { pgEl.textContent = '⚠ ' + e.message; attachPdfText = null; }
-}
-function clearPdf() {
-  attachPdfText = null; attachPdfName = null;
-  document.getElementById('pdf-preview').classList.remove('show');
-}
-
-// Drag and drop
-const mainEl = document.getElementById('main');
-mainEl.addEventListener('dragover', e=>{ e.preventDefault(); mainEl.classList.add('drag-over'); });
-mainEl.addEventListener('dragleave', ()=>mainEl.classList.remove('drag-over'));
-mainEl.addEventListener('drop', e=>{
-  e.preventDefault(); mainEl.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0]; if (!f) return;
-  if (f.type.startsWith('image/')) handleImg(f);
-  else if (f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')) handlePdf(f);
-});
-
-// ── Textarea auto-resize (rAF-debounced — no layout thrash) ─
-const msgInput = document.getElementById('msg-input');
-msgInput.addEventListener('input', () => {
-  if (resizeRaf) return;
-  resizeRaf = requestAnimationFrame(() => {
-    msgInput.style.height = 'auto';
-    msgInput.style.height = Math.min(msgInput.scrollHeight, 140) + 'px';
-    resizeRaf = null;
-  });
-});
-msgInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-
-// ── Send ─────────────────────────────────────────────────
-async function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text || isGenerating) return;
-
-  if (!activeChatId || !getActive()) newChat();
-  const chat  = getActive();
-  const model = document.getElementById('model-select').value || document.getElementById('model-locked').textContent;
-  const sys   = document.getElementById('sys-ta').value.trim();
-  const temp  = parseFloat(document.getElementById('temp-input').value) || 0.7;
-
-  chat.model = model;
-  chat.systemPrompt = sys;
-
-  // Build content — inject PDF text as context if attached
-  let finalText = text;
-  if (attachPdfText) {
-    const MAX = 12000;
-    const snip = attachPdfText.length > MAX ? attachPdfText.slice(0,MAX) + '\n\n[truncated…]' : attachPdfText;
-    finalText = `PDF attached: "${attachPdfName}"\n\n${snip}\n\n---\nUser: ${text}`;
-  }
-
-  const userMsg = { role:'user', content: finalText };
-  if (attachImgB64) { userMsg.images=[attachImgB64]; userMsg._imgB64=attachImgB64; userMsg._imgMime=attachImgMime; }
-  chat.messages.push(userMsg);
-
-  // Show bubble with original text (not injected context)
-  const ub = appendBubble(text, 'user', attachImgB64, attachImgMime);
-  if (attachPdfText) {
-    const badge = document.createElement('span');
-    badge.style.cssText = 'display:block;font-size:11px;opacity:.5;margin-top:4px;';
-    badge.textContent = '📄 ' + attachPdfName;
-    ub.appendChild(badge);
-  }
-
-  // Snapshot & clear attachments
-  clearImage(); clearPdf();
-  msgInput.value = ''; msgInput.style.height = 'auto';
-
-  if (chat.title === 'New Chat') {
-    chat.title = text.substring(0,50) + (text.length>50?'…':'');
-    renderList();
-  }
-
-  // Lock model
-  const ms = document.getElementById('model-select');
-  const ml = document.getElementById('model-locked');
-  ms.style.display = 'none'; ml.style.display = 'inline'; ml.textContent = model;
-
-  // Build api messages
-  let apiMsgs = [];
-  if (sys) apiMsgs.push({ role:'system', content:sys });
-  chat.messages.forEach(m => {
-    const am = { role:m.role, content:m.content };
-    if (m.images) am.images = m.images;
-    apiMsgs.push(am);
-  });
-
-  // Show loading overlay on first message
-  const overlay = document.getElementById('load-overlay');
-  if (chat.messages.length === 1) {
-    overlay.classList.add('active');
-    document.getElementById('load-text').textContent = `Loading ${model}…`;
-  }
-
-  // AI bubble with typing dots
-  const box = document.getElementById('chat-box');
-  const aiWrap = document.createElement('div');
-  aiWrap.className = 'msg-wrap ai';
-  const aiBub = document.createElement('div');
-  aiBub.className = 'bubble ai';
-  aiBub.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-  aiWrap.appendChild(aiBub);
-  box.appendChild(aiWrap);
-  box.scrollTop = box.scrollHeight;
-
-  isGenerating = true;
-  document.getElementById('send-btn').style.display = 'none';
-  document.getElementById('stop-btn').style.display = 'block';
-  abortCtrl = new AbortController();
-  let fullResp = '';
-
-  try {
-    const res = await fetch(OLLAMA + '/api/chat', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model, messages: apiMsgs, stream:true, options:{ temperature:temp } }),
-      signal: abortCtrl.signal
+// ÔöÇÔöÇ Events ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+function bind() {
+    D.send.addEventListener('click', ()=>S.streaming?stopStream():sendMsg(D.inp.value));
+    D.inp.addEventListener('input', ()=>{ autoResize(); updateSend(); });
+    D.inp.addEventListener('keydown', e=>{
+        if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!S.streaming)sendMsg(D.inp.value);}
+        if (e.key==='Escape'&&S.streaming) stopStream();
     });
-    if (!res.ok) throw new Error('Ollama error ' + res.status);
+    D.nc.addEventListener('click', ()=>{if(!S.streaming)createConv();});
+    D.sbTog.addEventListener('click', ()=>toggleSB());
+    D.ov.addEventListener('click', ()=>toggleSB(false));
+    D.thTop.addEventListener('click', toggleTheme);
+    D.thSb.addEventListener('click', toggleTheme);
+    D.ca.addEventListener('click', ()=>{if(!S.streaming)clearAll();});
+    D.att.addEventListener('click', ()=>D.fInp.click());
+    D.fInp.addEventListener('change', e=>{handleAttach(e.target.files[0]);e.target.value='';});
+    $$('.sc').forEach(c=>c.addEventListener('click',()=>{ const p=c.dataset.prompt; if(p) sendMsg(p); }));
 
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    aiBub.textContent = '';
-    overlay.classList.remove('active');
+    // Panel toggles
+    D.modelBtn.addEventListener('click', e=>{ e.stopPropagation(); toggleModelMenu(); D.sysPanel.classList.remove('open'); });
+    D.sysBtn.addEventListener('click', e=>{ e.stopPropagation(); D.sysPanel.classList.toggle('open'); toggleModelMenu(false); });
+    D.sysSet.addEventListener('click', saveGlobalPrompt);
+    D.sysClr.addEventListener('click', clearGlobalPrompt);
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = dec.decode(value, { stream:true });
-      for (const line of chunk.split('\n')) {
-        if (!line.trim()) continue;
-        try {
-          const p = JSON.parse(line);
-          if (p.message?.content) {
-            fullResp += p.message.content;
-            aiBub.textContent = fullResp; // plain text during stream — fast
-            box.scrollTop = box.scrollHeight;
-          }
-        } catch {}
-      }
-    }
+    document.addEventListener('click', e=>{
+        if (!D.modelDd.contains(e.target)) toggleModelMenu(false);
+        if (!D.sysPanel.contains(e.target)&&!D.sysBtn.contains(e.target)) D.sysPanel.classList.remove('open');
+    });
+    window.addEventListener('resize', ()=>{
+        if (window.innerWidth<=768&&S.sbOpen) toggleSB(false);
+    });
 
-    finalizeMsg(aiBub, fullResp);
-    chat.messages.push({ role:'assistant', content:fullResp });
-    saveChats();
-
-  } catch(err) {
-    overlay.classList.remove('active');
-    if (err.name === 'AbortError') {
-      if (fullResp) { finalizeMsg(aiBub, fullResp); chat.messages.push({ role:'assistant', content:fullResp }); saveChats(); }
-      else aiBub.innerHTML = '<span style="color:var(--text-d);font-style:italic;">[Stopped]</span>';
-    } else {
-      aiBub.innerHTML = `<span style="color:var(--red);">⚠ ${esc(err.message)}</span>`;
-      chat.messages.pop();
-    }
-  } finally {
-    isGenerating = false;
-    document.getElementById('send-btn').style.display = '';
-    document.getElementById('stop-btn').style.display = 'none';
-    msgInput.focus();
-  }
+    // Drag-and-drop (image / PDF / text files)
+    const mainEl = document.getElementById('main');
+    mainEl.addEventListener('dragover',  e => { e.preventDefault(); mainEl.classList.add('drag-over'); });
+    mainEl.addEventListener('dragleave', ()  => mainEl.classList.remove('drag-over'));
+    mainEl.addEventListener('drop', e => {
+        e.preventDefault(); mainEl.classList.remove('drag-over');
+        const f = e.dataTransfer.files[0]; if (!f) return;
+        const name = f.name.toLowerCase();
+        if (f.type.startsWith('image/')) {
+            handleImg(f);
+        } else if (f.type === 'application/pdf' || name.endsWith('.pdf')) {
+            handlePdf(f);
+        } else if (f.type === 'text/plain' || name.endsWith('.md') || name.endsWith('.txt')) {
+            handleText(f);
+        } else {
+            toast('File format not supported');
+        }
+    });
 }
-function stopGen() { if (abortCtrl) abortCtrl.abort(); }
 
-// ── Init ─────────────────────────────────────────────────
-(async () => {
-  await loadUiDependencies();
-  setupMarked();
-  await loadGlobalPrompt();    // restore global system prompt from USB (settings.json)
-  await loadChats();
-  await fetchModels();
-  renderList();
-  if (allChats.length) switchChat(allChats[0].id);
-  else showWelcome();
-  pollHW();
-  setInterval(pollHW, 5000);      // hardware stats every 5s
-  setInterval(fetchModels, 15000); // model list refresh
-})();
+// ÔöÇÔöÇ Start ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+init();
 </script>
 </body>
 </html>

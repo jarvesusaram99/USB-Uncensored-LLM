@@ -29,6 +29,10 @@ foreach ($asset in $json.assets) {
         if (-Not (Test-Path $dest) -or (Get-Item $dest).Length -lt 1024) {
             throw "Downloaded file missing/too small"
         }
+        # Patch Font Awesome CSS so font paths resolve from ./vendor/ instead of ../webfonts/
+        if ($name -eq "fa-all.min.css") {
+            (Get-Content -Raw $dest) -replace '\.\.\/webfonts\/', './' | Set-Content -NoNewline $dest
+        }
     } catch {
         if (Test-Path $dest) {
             Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue

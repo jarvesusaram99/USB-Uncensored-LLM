@@ -53,6 +53,11 @@ while IFS='|' read -r name url; do
     rm -f "$dest"
     echo "         WARNING: $name was too small. UI will fallback when online."
   fi
+  # Patch Font Awesome CSS so font paths resolve from ./vendor/ instead of ../webfonts/
+  if [ "$name" = "fa-all.min.css" ]; then
+    sed -i 's|\.\./webfonts/|./|g' "$dest" 2>/dev/null || \
+    sed -i '' 's|\.\./webfonts/|./|g' "$dest" 2>/dev/null || true
+  fi
 done < <("$PY_CMD" "$QUERY_SCRIPT" vendors)
 
 echo "      UI asset bootstrap complete."
