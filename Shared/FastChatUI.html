@@ -495,7 +495,7 @@ body{
 
 /* Drag-over overlay */
 #main.drag-over::after{
-  content:'Drop image or PDF';
+  content:'Drop image, PDF or text file';
   position:absolute;inset:0;
   background:rgba(99,102,241,0.12);
   border:2px dashed var(--accent);
@@ -621,8 +621,8 @@ body{
 
       <div class="input-row">
         <button id="attach-btn" title="Attach image or PDF" onclick="document.getElementById('attach-file').click()">📎</button>
-        <input type="file" id="attach-file" accept="image/*,.pdf,application/pdf" onchange="handleAttach(this.files[0])">
-        <textarea id="msg-input" rows="1" placeholder="Ask anything… drag & drop an image or PDF"></textarea>
+        <input type="file" id="attach-file" accept="image/*,.pdf,application/pdf,.md,.txt" onchange="handleAttach(this.files[0])">
+        <textarea id="msg-input" rows="1" placeholder="Ask anything… drag & drop image, PDF or text file"></textarea>
         <button id="send-btn" onclick="sendMessage()">Send ➤</button>
         <button id="stop-btn" onclick="stopGen()">■ Stop</button>
       </div>
@@ -951,8 +951,21 @@ function isVision(name) { return VISION_MODELS.some(v=>(name||'').toLowerCase().
 function handleAttach(file) {
   if (!file) return;
   document.getElementById('attach-file').value = '';
-  if (file.type.startsWith('image/')) handleImg(file);
-  else if (file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')) handlePdf(file);
+  const name = file.name.toLowerCase();
+
+  if (file.type.startsWith('image/')) {
+    handleImg(file);
+  } else if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
+    handlePdf(file);
+  } else if (
+    file.type === 'text/plain' ||
+    name.endsWith('.md') ||
+    name.endsWith('.txt')
+  ) {
+    handleText(file);
+  } else {
+    alert('File format not suported');
+  }
 }
 function handleImg(file) {
   clearPdf();
@@ -967,6 +980,20 @@ function handleImg(file) {
     checkVisionWarn();
   };
   reader.readAsDataURL(file);
+}
+async function handleText(file) {
+  clearImage();
+  clearPdf();
+
+  const text = await file.text();
+
+  attachPdfText = text; // reuses the PDF context system
+  attachPdfName = file.name;
+
+  document.getElementById('pdf-name').textContent = file.name;
+  document.getElementById('pdf-pages').textContent = `Text file · ~${text.length.toLocaleString()} chars`;
+
+  document.getElementById('pdf-preview').classList.add('show');
 }
 function clearImage() {
   attachImgB64 = null; attachImgMime = null;
@@ -1035,8 +1062,22 @@ mainEl.addEventListener('dragleave', ()=>mainEl.classList.remove('drag-over'));
 mainEl.addEventListener('drop', e=>{
   e.preventDefault(); mainEl.classList.remove('drag-over');
   const f = e.dataTransfer.files[0]; if (!f) return;
-  if (f.type.startsWith('image/')) handleImg(f);
-  else if (f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')) handlePdf(f);
+
+  const name = f.name.toLowerCase();
+
+  if (f.type.startsWith('image/')) {
+    handleImg(f);
+  } else if (f.type === 'application/pdf' || name.endsWith('.pdf')) {
+    handlePdf(f);
+  } else if (
+    f.type === 'text/plain' ||
+    name.endsWith('.md') ||
+    name.endsWith('.txt')
+  ) {
+    handleText(f);
+  } else {
+    alert('Tipo de arquivo não suportado');
+  }
 });
 
 // ── Textarea auto-resize (rAF-debounced — no layout thrash) ─
