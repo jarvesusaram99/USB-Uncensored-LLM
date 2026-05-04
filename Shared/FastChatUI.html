@@ -904,7 +904,9 @@
         max-width: 700px;
       }
       .usr .mc {
-        flex: unset;
+        display: flex;
+        flex-direction: column;
+        align-items: end;
         max-width: 82%;
       }
 
@@ -1915,6 +1917,7 @@
                   type="file"
                   id="f-inp"
                   hidden
+                  multiple
                   accept="image/*,.pdf,application/pdf,.txt,.md"
                 />
                 <button
@@ -1970,12 +1973,8 @@
         model: localStorage.getItem('g-model') || '',
         globalSys: '',
 
-        // Attachments
-        imgB64: null,
-        imgMime: null,
-        pdfText: null,
-        pdfName: null,
-        pdfPages: 0,
+        // Attachments (multi-file)
+        attachments: [],
       };
 
       // ÔöÇÔöÇ DOM ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -2190,49 +2189,109 @@
       }
 
       // ÔöÇÔöÇ File Attachments ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-      function handleAttach(file) {
-        if (!file) return;
-        const name = file.name.toLowerCase();
-        if (file.type.startsWith('image/')) {
-          handleImg(file);
-        } else if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
-          handlePdf(file);
-        } else if (
-          file.type === 'text/plain' ||
-          name.endsWith('.md') ||
-          name.endsWith('.txt')
-        ) {
-          handleText(file);
-        } else {
-          toast('File format not supported');
+      async function handleAttach(files) {
+        const list = Array.from(files || []).filter(Boolean);
+        if (!list.length) return;
+
+        let added = 0;
+        let rejected = 0;
+        for (const file of list) {
+          const ok = await handleSingleAttachment(file);
+          if (ok) added++;
+          else rejected++;
+        }
+
+        if (added) {
+          renderAttachmentBar();
+          checkVisionWarn();
+          updateSend();
+        }
+        if (rejected) {
+          toast(
+            rejected === list.length
+              ? 'No supported files selected'
+              : `${rejected} file(s) skipped`,
+          );
         }
       }
 
-      function handleImg(file) {
-        clearPdf();
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          S.imgB64 = e.target.result.split(',')[1];
-          S.imgMime = file.type;
-          D.fBar.innerHTML = `<div class="img-preview"><img src="${e.target.result}"><button class="f-rm" onclick="clearImage()"><i class="fa-solid fa-xmark"></i></button></div>`;
-          D.fBar.classList.add('on');
-          checkVisionWarn();
-          updateSend();
-        };
-        reader.readAsDataURL(file);
+      async function handleSingleAttachment(file) {
+        if (!file) return false;
+        const name = file.name.toLowerCase();
+        if (file.type.startsWith('image/')) return handleImg(file);
+        if (file.type === 'application/pdf' || name.endsWith('.pdf'))
+          return handlePdf(file);
+        if (
+          file.type === 'text/plain' ||
+          name.endsWith('.md') ||
+          name.endsWith('.txt')
+        )
+          return handleText(file);
+        return false;
       }
 
-      function clearImage() {
-        S.imgB64 = null;
-        S.imgMime = null;
-        D.fBar.classList.remove('on');
-        D.fBar.innerHTML = '';
+      function handleImg(file) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const src = e.target.result;
+            const b64 = src.split(',')[1];
+            S.attachments.push({
+              id: gid(),
+              type: 'image',
+              name: file.name,
+              mime: file.type || 'image/jpeg',
+              b64,
+              previewUrl: src,
+            });
+            resolve(true);
+          };
+          reader.onerror = () => resolve(false);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function removeAttachment(id) {
+        S.attachments = S.attachments.filter((a) => a.id !== id);
+        renderAttachmentBar();
         checkVisionWarn();
         updateSend();
       }
 
+      function clearAttachments() {
+        if (!S.attachments.length) return;
+        S.attachments = [];
+        renderAttachmentBar();
+        checkVisionWarn();
+        updateSend();
+      }
+
+      function renderAttachmentBar() {
+        if (!S.attachments.length) {
+          D.fBar.classList.remove('on');
+          D.fBar.innerHTML = '';
+          return;
+        }
+
+        D.fBar.classList.add('on');
+        D.fBar.innerHTML = S.attachments
+          .map((a) => {
+            if (a.type === 'image') {
+              return `<div class="img-preview"><img src="${a.previewUrl}" alt="${esc(a.name)}"><button class="f-rm" onclick="removeAttachment('${a.id}')"><i class="fa-solid fa-xmark"></i></button></div>`;
+            }
+            const icon = a.kind === 'pdf' ? 'fa-file-pdf' : 'fa-file-lines';
+            const meta =
+              a.kind === 'pdf'
+                ? `${a.pages || '?'} page${a.pages === 1 ? '' : 's'}`
+                : `Text file · ~${(a.text || '').length.toLocaleString()} chars`;
+            return `<div class="pdf-preview"><i class="fa-solid ${icon}" style="color:var(--grad1);font-size:22px;"></i><div class="p-info"><strong>${esc(a.name)}</strong><span>${meta}</span></div><button class="f-rm" onclick="removeAttachment('${a.id}')"><i class="fa-solid fa-xmark"></i></button></div>`;
+          })
+          .join('');
+      }
+
       function checkVisionWarn() {
-        if (!S.imgB64) {
+        const hasImage = S.attachments.some((a) => a.type === 'image');
+        if (!hasImage) {
           D.warn.classList.remove('on');
           return;
         }
@@ -2268,19 +2327,8 @@
       }
 
       async function handlePdf(file) {
-        clearImage();
-        S.pdfName = file.name;
-        D.fBar.innerHTML = `<div class="pdf-preview"><i class="fa-solid fa-file-pdf" style="color:var(--grad1);font-size:22px;"></i><div class="p-info"><strong>${esc(file.name)}</strong><span id="pdf-prog">Loading PDF.js...</span></div><button class="f-rm" onclick="clearPdf()"><i class="fa-solid fa-xmark"></i></button></div>`;
-        D.fBar.classList.add('on');
-        updateSend();
-
         const ok = await ensurePdfJs();
-        const prog = document.getElementById('pdf-prog');
-        if (!ok) {
-          if (prog) prog.textContent = 'PDF engine failed';
-          return;
-        }
-        if (prog) prog.textContent = 'Extracting...';
+        if (!ok) return false;
 
         try {
           const buf = await file.arrayBuffer();
@@ -2294,35 +2342,31 @@
               c.items.map((x) => x.str).join(' ') +
               '\n\n';
           }
-          S.pdfText = text.trim();
-          S.pdfPages = pdf.numPages;
-          if (prog)
-            prog.textContent = `${pdf.numPages} page${pdf.numPages > 1 ? 's' : ''}`;
-          updateSend();
+          S.attachments.push({
+            id: gid(),
+            type: 'doc',
+            kind: 'pdf',
+            name: file.name,
+            text: text.trim(),
+            pages: pdf.numPages,
+          });
+          return true;
         } catch (e) {
-          if (prog) prog.textContent = 'Error parsing';
-          S.pdfText = null;
-          updateSend();
+          return false;
         }
       }
 
-      function clearPdf() {
-        S.pdfText = null;
-        S.pdfName = null;
-        D.fBar.classList.remove('on');
-        D.fBar.innerHTML = '';
-        updateSend();
-      }
-
       async function handleText(file) {
-        clearImage();
-        clearPdf();
         const text = await file.text();
-        S.pdfText = text; // reuses the PDF context pipeline
-        S.pdfName = file.name;
-        D.fBar.innerHTML = `<div class="pdf-preview"><i class="fa-solid fa-file-lines" style="color:var(--grad1);font-size:22px;"></i><div class="p-info"><strong>${esc(file.name)}</strong><span>Text file &#183; ~${text.length.toLocaleString()} chars</span></div><button class="f-rm" onclick="clearPdf()"><i class="fa-solid fa-xmark"></i></button></div>`;
-        D.fBar.classList.add('on');
-        updateSend();
+        S.attachments.push({
+          id: gid(),
+          type: 'doc',
+          kind: 'text',
+          name: file.name,
+          text,
+          pages: 0,
+        });
+        return true;
       }
 
       // ÔöÇÔöÇ Conversation CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -2378,7 +2422,7 @@
 
       // ÔöÇÔöÇ Send / Stream to Ollama ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
       async function sendMsg(text) {
-        if ((!text.trim() && !S.imgB64 && !S.pdfText) || S.streaming) return;
+        if ((!text.trim() && !S.attachments.length) || S.streaming) return;
 
         let conv = getConv();
         if (!conv) {
@@ -2399,28 +2443,46 @@
           if (!Array.isArray(conv.msgs)) conv.msgs = [];
         }
 
-        let finalText = text.trim();
-        if (S.pdfText) {
-          const snip =
-            S.pdfText.length > 12000
-              ? S.pdfText.slice(0, 12000) + '\n\n[truncated...]'
-              : S.pdfText;
-          finalText = `PDF attached: "${S.pdfName}"\n\n${snip}\n\n---\nUser: ${text}`;
+        const baseText = text.trim();
+        const docAttachments = S.attachments.filter((a) => a.type === 'doc');
+        const imageAttachments = S.attachments.filter(
+          (a) => a.type === 'image',
+        );
+
+        let finalText = baseText;
+        if (docAttachments.length) {
+          const blocks = docAttachments
+            .map((a, idx) => {
+              const maxChars = 12000;
+              const body =
+                (a.text || '').length > maxChars
+                  ? (a.text || '').slice(0, maxChars) + '\n\n[truncated...]'
+                  : a.text || '';
+              return `Document ${idx + 1}: "${a.name}"\n\n${body}`;
+            })
+            .join('\n\n====================\n\n');
+          finalText = `Attached document context:\n\n${blocks}\n\n---\nUser: ${baseText || '[no text]'}`;
         }
 
         const msgObj = {
           id: gid(),
           role: 'user',
           content: finalText,
+          displayContent: baseText,
           ts: Date.now(),
         };
-        if (S.imgB64) {
-          msgObj.images = [S.imgB64];
-          msgObj._imgB64 = S.imgB64;
-          msgObj._imgMime = S.imgMime;
+        if (imageAttachments.length) {
+          msgObj.images = imageAttachments.map((a) => a.b64);
         }
-        if (S.pdfText) {
-          msgObj._pdfName = S.pdfName;
+        if (S.attachments.length) {
+          msgObj._attachments = S.attachments.map((a) => ({
+            id: a.id,
+            type: a.type,
+            kind: a.kind || null,
+            name: a.name,
+            mime: a.mime || null,
+            b64: a.type === 'image' ? a.b64 : null,
+          }));
         }
 
         conv.msgs.push(msgObj);
@@ -2432,8 +2494,7 @@
         D.inp.value = '';
         D.inp.style.height = 'auto';
         D.iw.classList.remove('ht');
-        clearImage();
-        clearPdf();
+        clearAttachments();
         updateSend();
         save();
         renderChat();
@@ -2615,14 +2676,21 @@
 
       function renderUser(msg) {
         let media = '';
-        if (msg._imgB64)
-          media += `<img class="msg-img" src="data:${msg._imgMime || 'image/jpeg'};base64,${msg._imgB64}">`;
-        if (msg._pdfName)
-          media += `<div class="msg-pdf-pill"><i class="fa-solid fa-file-pdf" style="color:var(--grad1)"></i>${esc(msg._pdfName)}</div>`;
+        const atts = Array.isArray(msg._attachments) ? msg._attachments : [];
+        atts.forEach((a) => {
+          if (a.type === 'image' && a.b64) {
+            media += `<img class="msg-img" src="data:${a.mime || 'image/jpeg'};base64,${a.b64}">`;
+            return;
+          }
+          if (a.type === 'doc') {
+            const icon = a.kind === 'pdf' ? 'fa-file-pdf' : 'fa-file-lines';
+            media += `<div class="msg-pdf-pill"><i class="fa-solid ${icon}" style="color:var(--grad1)"></i>${esc(a.name || 'Document')}</div>`;
+          }
+        });
 
-        let rawTxt = msg.content;
-        if (msg._pdfName && rawTxt.includes('PDF attached:')) {
-          rawTxt = rawTxt.split('---\nUser: ').pop() || '';
+        let rawTxt = msg.displayContent || msg.content;
+        if (!msg.displayContent && rawTxt.includes('\n\n---\nUser: ')) {
+          rawTxt = rawTxt.split('\n\n---\nUser: ').pop() || '';
         }
         const textBubble = rawTxt.trim()
           ? `<div class="ub"><div class="mt">${esc(rawTxt)}</div></div>`
@@ -2698,7 +2766,7 @@
       }
 
       function updateSend() {
-        const has = D.inp.value.trim().length > 0 || S.imgB64 || S.pdfText;
+        const has = D.inp.value.trim().length > 0 || S.attachments.length > 0;
         D.iw.classList.toggle('ht', has);
         if (S.streaming) {
           D.send.className = 'ib2 stbtn';
@@ -2818,8 +2886,8 @@
           if (!S.streaming) clearAll();
         });
         D.att.addEventListener('click', () => D.fInp.click());
-        D.fInp.addEventListener('change', (e) => {
-          handleAttach(e.target.files[0]);
+        D.fInp.addEventListener('change', async (e) => {
+          await handleAttach(e.target.files);
           e.target.value = '';
         });
         $$('.sc').forEach((c) =>
@@ -2864,22 +2932,7 @@
         mainEl.addEventListener('drop', (e) => {
           e.preventDefault();
           mainEl.classList.remove('drag-over');
-          const f = e.dataTransfer.files[0];
-          if (!f) return;
-          const name = f.name.toLowerCase();
-          if (f.type.startsWith('image/')) {
-            handleImg(f);
-          } else if (f.type === 'application/pdf' || name.endsWith('.pdf')) {
-            handlePdf(f);
-          } else if (
-            f.type === 'text/plain' ||
-            name.endsWith('.md') ||
-            name.endsWith('.txt')
-          ) {
-            handleText(f);
-          } else {
-            toast('File format not supported');
-          }
+          handleAttach(e.dataTransfer.files);
         });
       }
 
