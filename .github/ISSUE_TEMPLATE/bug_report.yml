@@ -1,0 +1,107 @@
+name: Bug report
+description: "Report a reproducible problem with logs, context, and expected behavior."
+title: "[Bug] "
+labels:
+  - bug
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this bug.
+        Please share only the relevant log snippet, not the full log file.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: "What went wrong in 1-3 sentences?"
+      placeholder: "Briefly describe the bug."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to reproduce"
+      description: "List exact steps so we can reproduce it reliably."
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Send ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected behavior"
+      placeholder: "What should have happened?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Actual behavior"
+      placeholder: "What happened instead?"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "OS version / device details"
+      description: "Example: Windows 11 23H2, MacBook M2, Ubuntu 24.04, Android 14 device model."
+      placeholder: "OS/version/device"
+    validations:
+      required: true
+
+  - type: input
+    id: app_mode
+    attributes:
+      label: "Server mode / launch args"
+      description: "Example: default mode, --llama-cpp, --no-browser"
+      placeholder: "Launch command or args used"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Relevant logs (snippet only)"
+      description: |
+        Try not to paste the entire log file.
+        Open Shared/logs/chat_server.log, find the matching timestamp block, and paste only that block.
+        Include request path/model details if available.
+        You can drag-and-drop the log file or screenshot directly into this field if needed.
+      placeholder: "Paste the relevant log block(s) here."
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Screenshots or screen recording (if possible)"
+      description: "Drag and drop images/video links showing the issue."
+      placeholder: "Add screenshots or links here."
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "Additional context"
+      description: "Anything else useful (frequency, network state, model used, large prompts/files, etc.)."
+      placeholder: "Extra details"

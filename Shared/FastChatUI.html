@@ -557,91 +557,140 @@
         color: var(--red);
       }
 
-      /* ÔöÇÔöÇ System Prompt Panel ÔöÇÔöÇ */
-      #sys-panel {
-        display: none;
-        background: var(--bg2);
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--bd);
-        flex-direction: column;
-        gap: 12px;
-        animation: fadeSlideDown 0.2s ease;
+    /* System Prompt Panel */
+    #sys-panel {
+      display: none;
+      background: var(--bg2);
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--bd);
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeSlideDown 0.2s ease;
+    }
+
+    #sys-panel.open {
+      display: flex;
+    }
+
+    @keyframes fadeSlideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
       }
-      #sys-panel.open {
-        display: flex;
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
-      @keyframes fadeSlideDown {
-        from {
-          opacity: 0;
-          transform: translateY(-6px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .sys-row {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-      }
-      .sys-row label {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--t2);
-        letter-spacing: 0.01em;
-      }
-      #sys-ta {
-        flex: 1;
-        background: var(--bg);
-        border: 1px solid var(--bd);
-        color: var(--t1);
-        font-size: 13.5px;
-        border-radius: var(--radius);
-        padding: 10px 14px;
-        resize: none;
-        height: 64px;
-        font-family: var(--font);
-        outline: none;
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s;
-      }
-      #sys-ta:focus {
-        border-color: var(--bd2);
-        box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12);
-      }
-      .sys-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .sys-btn {
-        padding: 6px 16px;
-        border-radius: var(--radius-pill);
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.15s;
-        border: none;
-        font-family: var(--font);
-      }
-      .sys-btn.primary {
-        background: rgba(66, 133, 244, 0.15);
-        color: #4285f4;
-      }
-      .sys-btn.primary:hover {
-        background: rgba(66, 133, 244, 0.25);
-      }
-      .sys-btn.secondary {
-        background: transparent;
-        border: 1px solid var(--bd);
-        color: var(--t2);
-      }
-      .sys-btn.secondary:hover {
-        background: var(--bgh);
-        color: var(--t1);
-      }
+    }
+
+    .sys-row {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .sys-row label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--t2);
+      letter-spacing: 0.01em;
+    }
+
+    #sys-ta {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      color: var(--t1);
+      font-size: 13.5px;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      resize: none;
+      height: 64px;
+      font-family: var(--font);
+      outline: none;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+    }
+
+    #sys-ta:focus {
+      border-color: var(--bd2);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12);
+    }
+
+    .sys-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sys-divider {
+      border: 0;
+      border-top: 1px solid var(--bd);
+      margin: 2px 0;
+      opacity: 0.9;
+    }
+
+    .sys-subrow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sys-select {
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      color: var(--t1);
+      border-radius: var(--radius);
+      font-size: 12.5px;
+      padding: 7px 10px;
+      min-width: 180px;
+      font-family: var(--font);
+      outline: none;
+    }
+
+    .sys-select:focus {
+      border-color: var(--bd2);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12);
+    }
+
+    .sys-hint {
+      font-size: 11px;
+      color: var(--t3);
+    }
+
+    .sys-btn {
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: none;
+      font-family: var(--font);
+    }
+
+    .sys-btn.primary {
+      background: rgba(66, 133, 244, 0.15);
+      color: #4285f4;
+    }
+
+    .sys-btn.primary:hover {
+      background: rgba(66, 133, 244, 0.25);
+    }
+
+    .sys-btn.secondary {
+      background: transparent;
+      border: 1px solid var(--bd);
+      color: var(--t2);
+    }
+
+    .sys-btn.secondary:hover {
+      background: var(--bgh);
+      color: var(--t1);
+    }
 
       /* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
            CHAT AREA
@@ -1748,24 +1797,32 @@
           </button>
         </header>
 
-        <!-- System Prompt Panel (slides down from topbar) -->
-        <div id="sys-panel">
-          <div class="sys-row">
-            <label>System Instructions</label>
-            <textarea
-              id="sys-ta"
-              placeholder="Add context or instructions for this conversation..."
-            ></textarea>
-          </div>
-          <div class="sys-actions">
-            <button class="sys-btn primary" id="set-global-btn">
-              Set as Default
-            </button>
-            <button class="sys-btn secondary" id="clear-global-btn">
-              Clear
-            </button>
+      <!-- System Prompt Panel (slides down from topbar) -->
+      <div id="sys-panel">
+        <div class="sys-row">
+          <label>System Instructions</label>
+          <textarea id="sys-ta" placeholder="Add context or instructions for this conversation..."></textarea>
+        </div>
+        <div class="sys-actions">
+          <button class="sys-btn primary" id="set-global-btn">
+            Set as Default
+          </button>
+          <button class="sys-btn secondary" id="clear-global-btn">
+            Clear
+          </button>
+        </div>
+        <hr class="sys-divider" />
+        <div class="sys-row">
+          <label for="log-mode-select">Logging</label>
+          <div class="sys-subrow">
+            <select id="log-mode-select" class="sys-select">
+              <option value="errors_only">Errors only (Recommended)</option>
+              <option value="all">Everything (Verbose)</option>
+            </select>
+            <span class="sys-hint">Saved per device. Reduce disk writes by using errors only.</span>
           </div>
         </div>
+      </div>
 
         <!-- Chat / Messages -->
         <div id="chat">
@@ -1961,17 +2018,17 @@
         'phi-3-vision',
       ];
 
-      // ÔöÇÔöÇ State ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-      const S = {
-        convs: [],
-        curId: null,
-        theme: localStorage.getItem('g-theme') || 'dark',
-        sbOpen: window.innerWidth > 768,
-        streaming: false,
-        abort: null,
-        models: [],
-        model: localStorage.getItem('g-model') || '',
-        globalSys: '',
+    const S = {
+      convs: [],
+      curId: null,
+      theme: localStorage.getItem('g-theme') || 'dark',
+      sbOpen: window.innerWidth > 768,
+      streaming: false,
+      abort: null,
+      models: [],
+      model: localStorage.getItem('g-model') || '',
+      globalSys: '',
+      logMode: localStorage.getItem('logMode') || 'errors_only',
 
         // Attachments (multi-file)
         attachments: [],
@@ -2006,15 +2063,16 @@
         tbTitle: $('#tb-title'),
         modelDd: $('#model-dd'),
 
-        // Extensions
-        sysBtn: $('#sys-prompt-btn'),
-        sysPanel: $('#sys-panel'),
-        sysTa: $('#sys-ta'),
-        sysSet: $('#set-global-btn'),
-        sysClr: $('#clear-global-btn'),
-        warn: $('#vision-warn'),
-        warnModel: $('#warn-model'),
-      };
+      // Extensions
+      sysBtn: $('#sys-prompt-btn'),
+      sysPanel: $('#sys-panel'),
+      sysTa: $('#sys-ta'),
+      logModeSel: $('#log-mode-select'),
+      sysSet: $('#set-global-btn'),
+      sysClr: $('#clear-global-btn'),
+      warn: $('#vision-warn'),
+      warnModel: $('#warn-model'),
+    };
 
       // ÔöÇÔöÇ Init ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
       async function init() {
@@ -2059,58 +2117,90 @@
           'hw-pct' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
       }
 
-      // ÔöÇÔöÇ Global Prompt ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-      async function loadGlobalPrompt() {
-        if (IS_SERVED) {
-          try {
-            const r = await fetch('/api/settings');
-            if (r.ok) {
-              const s = await r.json();
-              S.globalSys = s.globalSystemPrompt || '';
-            }
-          } catch {}
-        } else {
-          S.globalSys = localStorage.getItem('globalSystemPrompt') || '';
-        }
-        updateSysUI();
+    // Global Prompt
+    async function loadGlobalPrompt() {
+      if (IS_SERVED) {
+        try {
+          const r = await fetch('/api/settings');
+          if (r.ok) {
+            const s = await r.json();
+            S.globalSys = s.globalSystemPrompt || '';
+            S.logMode = s.logMode === 'all' ? 'all' : 'errors_only';
+          }
+        } catch { }
+      } else {
+        S.globalSys = localStorage.getItem('globalSystemPrompt') || '';
+        S.logMode = localStorage.getItem('logMode') || 'errors_only';
       }
-      async function saveGlobalPrompt() {
-        S.globalSys = D.sysTa.value.trim();
-        if (IS_SERVED) {
-          try {
-            await fetch('/api/settings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ globalSystemPrompt: S.globalSys }),
-            });
-          } catch {}
-        } else {
-          localStorage.setItem('globalSystemPrompt', S.globalSys);
-        }
-        updateSysUI();
-        toast('Default prompt saved');
+      updateSysUI();
+    }
+    async function saveGlobalPrompt() {
+      S.globalSys = D.sysTa.value.trim();
+      S.logMode = D.logModeSel.value === 'all' ? 'all' : 'errors_only';
+      if (IS_SERVED) {
+        try {
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              globalSystemPrompt: S.globalSys,
+              logMode: S.logMode,
+            }),
+          });
+        } catch { }
+      } else {
+        localStorage.setItem('globalSystemPrompt', S.globalSys);
+        localStorage.setItem('logMode', S.logMode);
       }
-      async function clearGlobalPrompt() {
-        S.globalSys = '';
-        D.sysTa.value = '';
-        if (IS_SERVED) {
-          try {
-            await fetch('/api/settings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ globalSystemPrompt: '' }),
-            });
-          } catch {}
-        } else {
-          localStorage.removeItem('globalSystemPrompt');
-        }
-        updateSysUI();
-        toast('Default prompt cleared');
+      updateSysUI();
+      toast('Default prompt saved');
+    }
+    async function clearGlobalPrompt() {
+      S.globalSys = '';
+      D.sysTa.value = '';
+      S.logMode = D.logModeSel.value === 'all' ? 'all' : 'errors_only';
+      if (IS_SERVED) {
+        try {
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              globalSystemPrompt: '',
+              logMode: S.logMode,
+            }),
+          });
+        } catch { }
+      } else {
+        localStorage.removeItem('globalSystemPrompt');
+        localStorage.setItem('logMode', S.logMode);
       }
-      function updateSysUI() {
-        if (S.globalSys) D.sysBtn.classList.add('has-global');
-        else D.sysBtn.classList.remove('has-global');
+      updateSysUI();
+      toast('Default prompt cleared');
+    }
+    async function saveLogMode() {
+      S.logMode = D.logModeSel.value === 'all' ? 'all' : 'errors_only';
+      if (IS_SERVED) {
+        try {
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logMode: S.logMode }),
+          });
+        } catch { }
+      } else {
+        localStorage.setItem('logMode', S.logMode);
       }
+      toast(
+        S.logMode === 'all'
+          ? 'Logging: everything'
+          : 'Logging: errors only',
+      );
+    }
+    function updateSysUI() {
+      D.logModeSel.value = S.logMode === 'all' ? 'all' : 'errors_only';
+      if (S.globalSys) D.sysBtn.classList.add('has-global');
+      else D.sysBtn.classList.remove('has-global');
+    }
 
       // ÔöÇÔöÇ Models ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
       function isVision(name) {
@@ -2897,19 +2987,20 @@
           }),
         );
 
-        // Panel toggles
-        D.modelBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleModelMenu();
-          D.sysPanel.classList.remove('open');
-        });
-        D.sysBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          D.sysPanel.classList.toggle('open');
-          toggleModelMenu(false);
-        });
-        D.sysSet.addEventListener('click', saveGlobalPrompt);
-        D.sysClr.addEventListener('click', clearGlobalPrompt);
+      // Panel toggles
+      D.modelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleModelMenu();
+        D.sysPanel.classList.remove('open');
+      });
+      D.sysBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        D.sysPanel.classList.toggle('open');
+        toggleModelMenu(false);
+      });
+      D.logModeSel.addEventListener('change', saveLogMode);
+      D.sysSet.addEventListener('click', saveGlobalPrompt);
+      D.sysClr.addEventListener('click', clearGlobalPrompt);
 
         document.addEventListener('click', (e) => {
           if (!D.modelDd.contains(e.target)) toggleModelMenu(false);

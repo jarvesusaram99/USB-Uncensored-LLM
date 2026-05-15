@@ -1,0 +1,71 @@
+name: Feature request
+description: "Suggest an improvement with clear problem, proposal, and expected impact."
+title: "[Feature] "
+
+labels:
+  - enhancement
+
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion.
+        Clear use-cases and examples help us prioritize faster.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem statement"
+      description: "What pain point are you facing today?"
+      placeholder: "Describe the current limitation or friction."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed solution"
+      description: "What should be added or changed?"
+      placeholder: "Describe the feature and how it should work."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Any workaround or alternate approach you tried?"
+      placeholder: "List alternatives and why they are not enough."
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Expected impact"
+      description: "Who benefits and how?"
+      placeholder: "Explain expected UX, reliability, or performance gains."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Target platform(s)"
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - All
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional context"
+      description: "Optional supporting context such as screenshots, linked issues, or examples."
+      placeholder: "Anything else we should know?"

@@ -21,7 +21,11 @@ import webbrowser
 import time
 import platform
 import ctypes
-import ctypes.util
+import logging
+import logging.handlers
+import queue
+import uuid
+from datetime import datetime
 from urllib.parse import urlparse
 
 # Optional: psutil for hardware stats (graceful fallback to native APIs if not installed)
@@ -44,7 +48,16 @@ CHATS_DIR = os.path.join(SCRIPT_DIR, "chat_data")
 CHATS_FILE = os.path.join(CHATS_DIR, "chats.json")
 SETTINGS_FILE = os.path.join(CHATS_DIR, "settings.json")
 HTML_FILE = os.path.join(SCRIPT_DIR, "FastChatUI.html")
+LOG_DIR = os.path.join(SCRIPT_DIR, "logs")
+LOG_FILE = os.path.join(LOG_DIR, "chat_server.log")
+LOG_MODE_ERRORS_ONLY = "errors_only"
+LOG_MODE_ALL = "all"
+DEFAULT_LOG_MODE = LOG_MODE_ERRORS_ONLY
 
+# Lock shared file persistence paths to avoid concurrent write corruption.
+DATA_FILE_LOCK = threading.RLock()
+LOG_MODE_LOCK = threading.RLock()
+ACTIVE_LOG_MODE = DEFAULT_LOG_MODE
 
 # ── Pure-Python Hardware Stats (no psutil needed) ──────────────
 _cpu_times_last = None  # (idle, total) from previous sample
@@ -154,20 +167,267 @@ def _get_hw_stats():
         ram = 0.0
         return cpu, ram
 
+def _safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+def _normalize_log_mode(value):
+    if value == LOG_MODE_ALL:
+        return LOG_MODE_ALL
+    return LOG_MODE_ERRORS_ONLY
+
+def _is_log_enabled(level):
+    with LOG_MODE_LOCK:
+        mode = ACTIVE_LOG_MODE
+    if mode == LOG_MODE_ALL:
+        return True
+    return level >= logging.ERROR
+
+def _load_settings_file():
+    default_settings = {
+        "globalSystemPrompt": "",
+        "temperature": 0.7,
+        "logMode": DEFAULT_LOG_MODE,
+    }
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        if isinstance(loaded, dict):
+            merged = dict(default_settings)
+            merged.update(loaded)
+            merged["logMode"] = _normalize_log_mode(merged.get("logMode"))
+            return merged
+    except Exception:
+        pass
+    return default_settings
+
+def _persist_settings_file(settings):
+    with DATA_FILE_LOCK:
+        temp_file = SETTINGS_FILE + ".tmp"
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+            f.flush()
+        os.replace(temp_file, SETTINGS_FILE)
+
+def _set_active_log_mode(mode):
+    global ACTIVE_LOG_MODE
+    with LOG_MODE_LOCK:
+        ACTIVE_LOG_MODE = _normalize_log_mode(mode)
+
+def _get_hardware_specs():
+    """Collect a stable host hardware snapshot for log enrichment."""
+    plat = platform.system()
+    specs = {
+        "platform": plat,
+        "platform_release": platform.release(),
+        "platform_version": platform.version(),
+        "machine": platform.machine(),
+        "processor": platform.processor() or "unknown",
+        "python_version": sys.version.split()[0],
+        "cpu_count_logical": os.cpu_count() or 0,
+        "has_psutil": HAS_PSUTIL,
+        "ram_total_gb": None,
+    }
+    if HAS_PSUTIL:
+        try:
+            total_ram = psutil.virtual_memory().total
+            specs["ram_total_gb"] = round(total_ram / (1024 ** 3), 2)
+        except Exception:
+            pass
+    elif plat == "Windows":
+        try:
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+            msx = MEMORYSTATUSEX()
+            msx.dwLength = ctypes.sizeof(msx)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(msx))
+            specs["ram_total_gb"] = round(msx.ullTotalPhys / (1024 ** 3), 2)
+        except Exception:
+            pass
+    elif plat == "Linux":
+        try:
+            mem = {}
+            with open("/proc/meminfo", "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        mem[parts[0].rstrip(":")] = int(parts[1])
+            total_kb = mem.get("MemTotal")
+            if total_kb:
+                specs["ram_total_gb"] = round((total_kb * 1024) / (1024 ** 3), 2)
+        except Exception:
+            pass
+        try:
+            with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.lower().startswith("model name"):
+                        _, value = line.split(":", 1)
+                        model = value.strip()
+                        if model:
+                            specs["processor"] = model
+                            break
+        except Exception:
+            pass
+    else:
+        # Keep parity with _get_hw_stats fallback behavior:
+        # skip macOS/native probing in the non-psutil path.
+        pass
+    return specs
+
+class LogFormatter(logging.Formatter):
+    """Readable, multi-line formatter with strict spacing and rich context."""
+
+    def format(self, record):
+        local_now = datetime.now().astimezone()
+        timestamp = local_now.isoformat()
+        tz_label = local_now.tzname() or "local"
+        exception_text = ""
+        if record.exc_info:
+            exception_text = self.formatException(record.exc_info)
+        hardware = getattr(record, "hardware_specs", None) or {}
+        request_headers = getattr(record, "request_headers", None) or {}
+        lines = [
+            "=" * 96,
+            f"timestamp     : {timestamp}",
+            f"timezone      : {tz_label}",
+            f"level         : {record.levelname}",
+            f"event         : {record.getMessage()}",
+            "",
+            "request_context",
+            f"  request_id   : {getattr(record, 'request_id', '-')}",
+            f"  method       : {getattr(record, 'http_method', '-')}",
+            f"  path         : {getattr(record, 'path', '-')}",
+            f"  api_source   : {getattr(record, 'api_source', '-')}",
+            f"  client_ip    : {getattr(record, 'client_ip', '-')}",
+            f"  user_agent   : {request_headers.get('User-Agent', '-')}",
+            f"  model_name   : {getattr(record, 'model_name', '-')}",
+            f"  model_temp   : {getattr(record, 'model_temperature', '-')}",
+            f"  model_stream : {getattr(record, 'model_stream', '-')}",
+            "",
+            "code_context",
+            f"  logger       : {record.name}",
+            f"  module       : {record.module}",
+            f"  function     : {record.funcName}",
+            f"  line         : {record.lineno}",
+            f"  thread       : {record.threadName}",
+            "",
+            "hardware_specs",
+            f"  platform     : {hardware.get('platform', '-')}",
+            f"  release      : {hardware.get('platform_release', '-')}",
+            f"  machine      : {hardware.get('machine', '-')}",
+            f"  processor    : {hardware.get('processor', '-')}",
+            f"  cpu_logical  : {hardware.get('cpu_count_logical', '-')}",
+            f"  ram_total_gb : {hardware.get('ram_total_gb', '-')}",
+            f"  python       : {hardware.get('python_version', '-')}",
+        ]
+        if exception_text:
+            lines.extend(["", "exception", exception_text])
+        lines.append("=" * 96)
+        return "\n".join(lines)
+
+class ImmediateFlushRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """Flush each record immediately so logs are visible without waiting."""
+
+    def emit(self, record):
+        super().emit(record)
+        try:
+            self.flush()
+        except Exception:
+            pass
+
+def configure_logging():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    logger = logging.getLogger("chat_server")
+    logger.setLevel(logging.INFO)
+    logger.handlers = []
+    logger.propagate = False
+
+    log_queue = queue.Queue(maxsize=10000)
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    logger.addHandler(queue_handler)
+
+    file_handler = ImmediateFlushRotatingFileHandler(
+        LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=1, encoding="utf-8"
+    )
+    file_handler.setFormatter(LogFormatter())
+
+    listener = logging.handlers.QueueListener(log_queue, file_handler, respect_handler_level=True)
+    listener.start()
+    return logger, listener
+
+def _log_event(level, message, request_context=None, exc_info=False):
+    if not _is_log_enabled(level):
+        return
+    request_context = request_context or {}
+    LOGGER.log(
+        level,
+        message,
+        extra={
+            "request_id": request_context.get("request_id", "-"),
+            "http_method": request_context.get("method", "-"),
+            "path": request_context.get("path", "-"),
+            "api_source": request_context.get("api_source", "-"),
+            "client_ip": request_context.get("client_ip", "-"),
+            "request_headers": request_context.get("request_headers", {}),
+            "model_name": request_context.get("model_name", "-"),
+            "model_temperature": request_context.get("model_temperature", "-"),
+            "model_stream": request_context.get("model_stream", "-"),
+            "hardware_specs": HOST_HARDWARE_SPECS,
+        },
+        exc_info=exc_info,
+    )
 
 def ensure_data_dir():
-    """Create the chat_data folder on the USB if it doesn't exist."""
+    """Create required data folders if they don't exist."""
     os.makedirs(CHATS_DIR, exist_ok=True)
+    os.makedirs(LOG_DIR, exist_ok=True)
     if not os.path.exists(CHATS_FILE):
         with open(CHATS_FILE, "w", encoding="utf-8") as f:
             json.dump([], f)
     if not os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump({"systemPrompt": "", "temperature": 0.7}, f)
-
+            json.dump(
+                {
+                    "globalSystemPrompt": "",
+                    "temperature": 0.7,
+                    "logMode": DEFAULT_LOG_MODE,
+                },
+                f,
+            )
 
 class ChatHandler(http.server.BaseHTTPRequestHandler):
     """Handles all HTTP requests for the Portable AI Chat."""
+
+    def _build_request_context(self, api_source):
+        headers = {}
+        for key in ("User-Agent", "Authorization"):
+            value = self.headers.get(key)
+            if value:
+                headers[key] = value
+        return {
+            "request_id": str(uuid.uuid4()),
+            "method": getattr(self, "command", "-"),
+            "path": getattr(self, "path", "-"),
+            "api_source": api_source,
+            "client_ip": self.client_address[0] if self.client_address else "-",
+            "request_headers": headers,
+        }
+
+    def _read_body(self):
+        length = _safe_int(self.headers.get("Content-Length"), 0)
+        return self.rfile.read(length) if length > 0 else b""
 
     def log_message(self, format, *args):
         """Print all requests for easy debugging."""
@@ -296,10 +556,15 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
 
     # ── Chat Persistence ───────────────────────────────────────
     def _get_chats(self):
+        request_context = self._build_request_context("/api/chats")
         try:
-            with open(CHATS_FILE, "r", encoding="utf-8") as f:
-                data = f.read()
+            with DATA_FILE_LOCK:
+                with open(CHATS_FILE, "r", encoding="utf-8") as f:
+                    data = f.read()
         except (FileNotFoundError, json.JSONDecodeError):
+            data = "[]"
+        except Exception:
+            _log_event(logging.ERROR, "Failed to read chats file", request_context=request_context, exc_info=True)
             data = "[]"
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -308,28 +573,36 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data.encode("utf-8"))
 
     def _save_chats(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
+        request_context = self._build_request_context("/api/chats")
+        body = self._read_body()
         try:
             chats = json.loads(body)
-            with open(CHATS_FILE, "w", encoding="utf-8") as f:
-                json.dump(chats, f, ensure_ascii=False, indent=2)
+            with DATA_FILE_LOCK:
+                temp_file = CHATS_FILE + ".tmp"
+                with open(temp_file, "w", encoding="utf-8") as f:
+                    json.dump(chats, f, ensure_ascii=False, indent=2)
+                    f.flush()
+                os.replace(temp_file, CHATS_FILE)
+            _log_event(logging.INFO, "Chats saved successfully", request_context=request_context)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self._cors_headers()
             self.end_headers()
             self.wfile.write(json.dumps({"ok": True}).encode())
         except Exception as e:
+            _log_event(logging.ERROR, "Failed to save chats", request_context=request_context, exc_info=True)
             self.send_response(500)
             self._cors_headers()
             self.end_headers()
             self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def _get_settings(self):
+        request_context = self._build_request_context("/api/settings")
         try:
-            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                data = f.read()
-        except (FileNotFoundError, json.JSONDecodeError):
+            settings = _load_settings_file()
+            data = json.dumps(settings)
+        except Exception:
+            _log_event(logging.ERROR, "Failed to read settings file", request_context=request_context, exc_info=True)
             data = "{}"
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -338,18 +611,26 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data.encode("utf-8"))
 
     def _save_settings(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
+        request_context = self._build_request_context("/api/settings")
+        body = self._read_body()
         try:
-            settings = json.loads(body)
-            with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-                json.dump(settings, f, ensure_ascii=False, indent=2)
+            incoming = json.loads(body)
+            if not isinstance(incoming, dict):
+                raise ValueError("Settings payload must be a JSON object")
+
+            settings = _load_settings_file()
+            settings.update(incoming)
+            settings["logMode"] = _normalize_log_mode(settings.get("logMode"))
+            _persist_settings_file(settings)
+            _set_active_log_mode(settings["logMode"])
+            _log_event(logging.INFO, "Settings saved successfully", request_context=request_context)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self._cors_headers()
             self.end_headers()
-            self.wfile.write(json.dumps({"ok": True}).encode())
+            self.wfile.write(json.dumps({"ok": True, "logMode": settings["logMode"]}).encode())
         except Exception as e:
+            _log_event(logging.ERROR, "Failed to save settings", request_context=request_context, exc_info=True)
             self.send_response(500)
             self._cors_headers()
             self.end_headers()
@@ -367,6 +648,12 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data.encode())
         except Exception as e:
+            _log_event(
+                logging.ERROR,
+                "Failed to collect hardware stats",
+                request_context=self._build_request_context("/api/stats"),
+                exc_info=True,
+            )
             self.send_response(500)
             self._cors_headers()
             self.end_headers()
@@ -378,6 +665,7 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         Proxy requests from /ollama/* to the local Ollama engine.
         Supports streaming responses for /api/chat and /api/generate.
         """
+        request_context = self._build_request_context("/ollama")
         # Strip the /ollama prefix to get the real Ollama path
         ollama_path = self.path[len("/ollama"):]
         target_url = OLLAMA_HOST + ollama_path
@@ -387,6 +675,17 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         if content_length > 0:
             body = self.rfile.read(content_length)
+        payload = {}
+        if body:
+            try:
+                payload = json.loads(body)
+            except Exception:
+                payload = {}
+
+        if isinstance(payload, dict):
+            request_context["model_name"] = payload.get("model", "-")
+            request_context["model_stream"] = payload.get("stream", "-")
+            request_context["model_temperature"] = payload.get("options", {}).get("temperature", "-")
 
         try:
             # Handle fake /api/tags for llama.cpp mode
@@ -433,6 +732,12 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
 
             self._cors_headers()
             self.end_headers()
+            if method == "POST" and ("/api/chat" in ollama_path or "/api/generate" in ollama_path):
+                _log_event(
+                    logging.INFO,
+                    f"Model request succeeded with upstream status {response.status}",
+                    request_context=request_context,
+                )
 
             # Stream the response in chunks
             while True:
@@ -457,16 +762,40 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                                         "message": {"role": "assistant", "content": delta.get("content", "")},
                                         "done": False
                                     }
-                                    self.wfile.write((json.dumps(out) + "\n").encode())
-                                    self.wfile.flush()
+                                    try:
+                                        self.wfile.write((json.dumps(out) + "\n").encode())
+                                        self.wfile.flush()
+                                    except (BrokenPipeError, ConnectionResetError, OSError):
+                                        _log_event(
+                                            logging.ERROR,
+                                            "Client disconnected while streaming response",
+                                            request_context=request_context,
+                                            exc_info=True,
+                                        )
+                                        return
                             except:
                                 pass
                 else:
-                    self.wfile.write(chunk)
-                    if is_stream:
-                        self.wfile.flush()
+                    try:
+                        self.wfile.write(chunk)
+                        if is_stream:
+                            self.wfile.flush()
+                    except (BrokenPipeError, ConnectionResetError, OSError):
+                        _log_event(
+                            logging.ERROR,
+                            "Client disconnected while streaming response",
+                            request_context=request_context,
+                            exc_info=True,
+                        )
+                        return
 
         except urllib.error.HTTPError as e:
+            _log_event(
+                logging.ERROR,
+                f"Upstream HTTP error from Ollama: {e.code}",
+                request_context=request_context,
+                exc_info=True,
+            )
             self.send_response(e.code)
             self._cors_headers()
             self.end_headers()
@@ -476,6 +805,12 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                 pass
 
         except urllib.error.URLError as e:
+            _log_event(
+                logging.ERROR,
+                "Failed to reach Ollama upstream",
+                request_context=request_context,
+                exc_info=True,
+            )
             self.send_response(502)
             self._cors_headers()
             self.end_headers()
@@ -483,6 +818,12 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(msg.encode())
 
         except Exception as e:
+            _log_event(
+                logging.ERROR,
+                "Unhandled proxy error",
+                request_context=request_context,
+                exc_info=True,
+            )
             self.send_response(500)
             self._cors_headers()
             self.end_headers()
@@ -504,15 +845,17 @@ class ThreadedHTTPServer(http.server.HTTPServer):
         finally:
             self.shutdown_request(request)
 
+HOST_HARDWARE_SPECS = _get_hardware_specs()
+LOGGER, LOG_LISTENER = configure_logging()
 
 def open_browser_delayed():
     """Open the browser after a short delay to ensure server is ready."""
     time.sleep(1.0)
     webbrowser.open(f"http://localhost:{CHAT_SERVER_PORT}")
 
-
 def main():
     ensure_data_dir()
+    _set_active_log_mode(_load_settings_file().get("logMode"))
     
     # Try to find the local LAN IP
     local_ip = "127.0.0.1"
@@ -553,7 +896,11 @@ def main():
         print("\n  Shutting down chat server...")
         server.shutdown()
         print("  Goodbye!")
-
+    finally:
+        try:
+            LOG_LISTENER.stop()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
