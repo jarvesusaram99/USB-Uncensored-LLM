@@ -14,6 +14,7 @@ Shared/chat_data/
 Shared/python/
 Shared/bin/
 Shared/*.zip
+Shared/logs/
 
 # Ignore Windows system files
 Thumbs.db
